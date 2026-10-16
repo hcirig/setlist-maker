@@ -277,7 +277,7 @@ function App() {
       if (logoDimensions.height > 0) {
         const ratio = logoDimensions.width / logoDimensions.height;
         logoWidth = logoHeight * ratio;
-        if (logoWidth > 55) logoWidth = 55; // Límite máximo de ancho
+        if (logoWidth > 55) logoWidth = 55;
       } else {
         logoWidth = 30;
       }
@@ -481,22 +481,22 @@ function App() {
       
       <main className="main-container">
         
-        {/* BUSCADOR DE CANCIONES */}
-        <section className="columna-catalogo" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
+        {/* BUSCADOR DE CANCIONES (FIX DE ANCHO) */}
+        <section className="columna-catalogo" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0, boxSizing: 'border-box' }}>
           <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Buscador de Canciones</h2>
           
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '6px', marginBottom: '12px', width: '100%', boxSizing: 'border-box' }}>
             <input 
               type="text" 
-              placeholder="Artista, canción o disco..." 
+              placeholder="Artista, canción..." 
               value={busqueda} 
               onChange={(e) => setBusqueda(e.target.value)}
-              style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '0.95em' }}
+              style={{ flex: 1, minWidth: 0, padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '0.9em', boxSizing: 'border-box' }}
             />
             <button 
               type="submit" 
               disabled={cargandoBusqueda}
-              style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: cargandoBusqueda ? 'wait' : 'pointer', fontWeight: 'bold' }}
+              style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '8px 10px', borderRadius: '4px', cursor: cargandoBusqueda ? 'wait' : 'pointer', fontWeight: 'bold', fontSize: '0.85em', flexShrink: 0 }}
             >
               {cargandoBusqueda ? '...' : '🔍 Buscar'}
             </button>
@@ -504,15 +504,14 @@ function App() {
 
           <div className="scroll-area">
             {cargandoBusqueda ? (
-              <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Buscando en catálogo global... 🎵</p>
+              <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Buscando canciones... 🎵</p>
             ) : errorBusqueda ? (
-              <p style={{ color: '#f44336', textAlign: 'center', padding: '10px 0' }}>{errorBusqueda}</p>
+              <p style={{ color: '#f44336', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
             ) : resultados.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#888', padding: '20px 10px', fontSize: '0.85em' }}>
-                <p style={{ marginBottom: '10px' }}>Escribe el nombre de tu banda, artista o canción para buscar canciones publicadas.</p>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
-                  <span style={{ fontSize: '0.8em', color: '#aaa' }}>Sugerencias:</span>
-                  {['Queen', 'Soda Stereo', 'Metallica', 'Ghost', 'Coldplay'].map((term) => (
+              <div style={{ textAlign: 'center', color: '#888', padding: '15px 5px', fontSize: '0.85em' }}>
+                <p style={{ marginBottom: '10px' }}>Busca por artista o tema para armar tu setlist.</p>
+                <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {['Soda Stereo', 'Queen', 'Metallica', 'Ghost', 'Coldplay'].map((term) => (
                     <button
                       key={term}
                       onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
@@ -525,36 +524,36 @@ function App() {
               </div>
             ) : (
               discosAgrupados.map((disco) => (
-                <details key={disco.nombreDisco} open style={{ marginBottom: '6px', backgroundColor: '#333', borderRadius: '5px' }}>
-                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left' }}>
+                <details key={disco.nombreDisco} open style={{ marginBottom: '6px', backgroundColor: '#333', borderRadius: '5px', overflow: 'hidden' }}>
+                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left', minWidth: 0 }}>
                     <img 
                       src={disco.artwork} 
                       alt={disco.nombreDisco} 
-                      style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '3px', objectFit: 'cover', backgroundColor: '#111' }} 
+                      style={{ width: '32px', height: '32px', marginRight: '8px', borderRadius: '3px', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }} 
                       onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
                     />
-                    <div style={{ flex: '1', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <div>{disco.nombreDisco}</div>
-                      <small style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.85em' }}>
+                    <div style={{ flex: '1', minWidth: 0, overflow: 'hidden' }}>
+                      <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>{disco.nombreDisco}</div>
+                      <small style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.8em', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                         {disco.artista} {disco.anio ? `• ${disco.anio}` : ''}
                       </small>
                     </div>
                   </summary>
-                  <div style={{ padding: '0 8px 8px 8px' }}>
+                  <div style={{ padding: '0 6px 6px 6px' }}>
                     {disco.canciones.map((cancion) => (
-                      <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '5px 8px', borderRadius: '4px', gap: '8px' }}>
-                        <div style={{ textAlign: 'left', flex: '1', minWidth: 0 }}>
-                          <strong style={{ fontSize: '0.8em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '6px 8px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
+                        <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
+                          <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
                             {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{cancion.trackName}
                           </strong>
-                          <small style={{ color: '#aaa', fontSize: '0.7em' }}>
-                            {cancion.artistName} • {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
+                          <small style={{ color: '#aaa', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
+                            {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
                           </small>
                         </div>
                         <button 
                           onClick={() => agregarAlSetlist(cancion)}
                           title="Agregar al setlist"
-                          style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '3px', cursor: 'pointer', fontSize: '1.1em', flexShrink: 0 }}
+                          style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '1em', flexShrink: 0 }}
                         >
                           +
                         </button>
@@ -568,7 +567,7 @@ function App() {
         </section>
 
         {/* SETLIST PRINCIPAL */}
-        <section className="columna-setlist" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
+        <section className="columna-setlist" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
             <h2 style={{ margin: '5px 0', fontSize: '1.2em' }}>Tu Setlist</h2>
             {setlistRenderizado.length > 0 && (
@@ -707,7 +706,7 @@ function App() {
         </section>
 
         {/* PANEL DE CONTROL */}
-        <section className="columna-panel" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
+        <section className="columna-panel" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0 }}>
           <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Panel de Control</h2>
           
           <button 
