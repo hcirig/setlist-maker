@@ -15,16 +15,11 @@ const formatearTiempoTotal = (segundosTotales) => {
   return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
 };
 
-// Función para limpiar de manera inteligente la información innecesaria de la versión
+// Limpieza de títulos (remaster, live, etc.)
 const limpiarTituloCancion = (nombreOriginal) => {
   if (!nombreOriginal) return '';
-  
-  // Expresión regular que busca paréntesiss o corchetes que contengan términos típicos de versión/remaster
   const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster|remastered|version|edit|mix|live|deluxe|bonus|track|anniversary|single|mono|stereo|digital|take|demo|edition)\b.*?[\)\]\}]/gi;
-  
   let tituloLimpio = nombreOriginal.replace(patronInnecesario, '');
-  
-  // Elimina espacios dobles o sobrantes al final o principio
   return tituloLimpio.replace(/\s+/g, ' ').trim();
 };
 
@@ -53,7 +48,7 @@ function App() {
   const [nombreCancionExtra, setNombreCancionExtra] = useState("");
   const [duracionCancionExtra, setDuracionCancionExtra] = useState("03:30");
 
-  // Datos del Show y Banda (Universales)
+  // Datos del Show y Banda
   const [fecha, setFecha] = useState("");
   const [venue, setVenue] = useState("");
   const [ciudad, setCiudad] = useState("");
@@ -75,7 +70,6 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf]);
 
-  // Búsqueda en API iTunes
   const ejecutarBusqueda = async (termino) => {
     const query = termino || busqueda;
     if (!query.trim()) return;
@@ -99,7 +93,6 @@ function App() {
     ejecutarBusqueda();
   };
 
-  // Carga e inspección de dimensiones del Logo de la banda
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -285,7 +278,7 @@ function App() {
     const elemento = document.getElementById('setlist-pdf-contenedor');
     
     let logoWidth = 0;
-    const logoHeight = 20; // 20mm
+    const logoHeight = 20; 
     let textStartX = 10;
 
     if (logoUrl) {
@@ -379,141 +372,160 @@ function App() {
   };
 
   const obtenerColorFondo = (item) => {
-    if (item.esTextoLibre) return '#444';
-    if (item.esEspecial) return '#1e3a5f';
-    if (item.esCancionExtra) return '#3e1e4a'; 
-    return '#333';
+    if (item.esTextoLibre) return '#2e2e38';
+    if (item.esEspecial) return '#1e2b3d';
+    if (item.esCancionExtra) return '#331e3d'; 
+    return '#262630';
   };
 
   const obtenerColorBorde = (item) => {
-    if (item.esTextoLibre) return '4px solid #aaa';
+    if (item.esTextoLibre) return '4px solid #8a8a9e';
     if (item.esEspecial) return '4px solid #4da6ff';
     if (item.esCancionExtra) return '4px solid #b388ff'; 
     return 'none';
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '15px', backgroundColor: '#1a1a1a', color: '#fff', minHeight: '100vh', fontSize: '0.9em' }}>
+    <div style={{ padding: '20px', minHeight: '100vh', boxSizing: 'border-box' }}>
       
-      <header style={{ borderBottom: '1px solid #444', paddingBottom: '15px', marginBottom: '20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <h1 style={{ margin: 0, fontSize: '2.5em', letterSpacing: '-1px' }}>Setlist Maker</h1>
-          <p style={{ margin: '4px 0 0 0', color: '#aaa', fontSize: '0.9em' }}>Crea y personaliza el setlist de tu banda listo para imprimir</p>
-        </div>
+      {/* HEADER CON IMAGEN CENTRAL (public/header-logo.png) */}
+      <header className="app-header">
+        <img 
+          src="/header-logo.png" 
+          alt="Setlist Maker" 
+          className="header-banner"
+          onError={(e) => {
+            // Fallback en caso de que aún no hayas colocado la imagen en public/
+            e.target.style.display = 'none';
+            if (!document.getElementById('fallback-title')) {
+              const h1 = document.createElement('h1');
+              h1.id = 'fallback-title';
+              h1.innerText = 'SETLIST MAKER';
+              h1.style.margin = '0';
+              h1.style.fontSize = '2em';
+              h1.style.letterSpacing = '2px';
+              e.target.parentNode.appendChild(h1);
+            }
+          }}
+        />
+      </header>
 
-        <div className="header-inputs">
-          <div className="header-row">
-            <label style={{ display: 'flex', flexDirection: 'column', flex: '1', fontWeight: 'bold', fontSize: '0.9em' }}>
-              Fecha:
-              <input 
-                type="date" 
-                value={fecha} 
-                onChange={(e) => setFecha(e.target.value)}
-                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-              />
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
-              Venue (Lugar):
-              <input 
-                type="text" 
-                placeholder="Ej: Movistar Arena" 
-                value={venue} 
-                onChange={(e) => setVenue(e.target.value)}
-                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-              />
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
-              Ciudad / País:
-              <input 
-                type="text" 
-                placeholder="Ej: Buenos Aires, Argentina" 
-                value={ciudad} 
-                onChange={(e) => setCiudad(e.target.value)}
-                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-              />
-            </label>
-          </div>
+      {/* CONTENEDOR SECCIONES "MI BANDA" Y "PRÓXIMO SHOW" */}
+      <section className="band-show-container">
+        
+        {/* MI BANDA */}
+        <div className="section-block">
+          <h2 className="section-title-right">Mi Banda</h2>
+          
+          <div className="field-group" style={{ marginBottom: '10px' }}>
+            <input 
+              type="file" 
+              accept="image/*"
+              id="logo-upload"
+              onChange={handleLogoChange}
+              style={{ display: 'none' }}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <label htmlFor="logo-upload" className="btn-pill">
+                <i className="fa-regular fa-image btn-icon"></i>
+                <span>cargar logo</span>
+              </label>
 
-          <div className="header-row">
-            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
-              Redes / Contacto (Pie del PDF):
-              <input 
-                type="text" 
-                placeholder="Ej: IG: @mi_banda | Spotify: Mi Banda | www.mibanda.com" 
-                value={contactoRedes} 
-                onChange={(e) => setContactoRedes(e.target.value)}
-                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-              />
-            </label>
-
-            <div style={{ display: 'flex', flexDirection: 'column', flex: '1.5', fontWeight: 'bold', fontSize: '0.9em' }}>
-              <span>Logo de la Banda (para PDF):</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  id="logo-upload"
-                  onChange={handleLogoChange}
-                  style={{ display: 'none' }}
-                />
-                <label 
-                  htmlFor="logo-upload"
-                  style={{ 
-                    backgroundColor: '#333', 
-                    color: '#fff', 
-                    padding: '8px 12px', 
-                    borderRadius: '4px', 
-                    border: '1px solid #555', 
-                    cursor: 'pointer',
-                    fontSize: '0.9em',
-                    textAlign: 'center',
-                    flex: '1'
-                  }}
-                >
-                  {logoUrl ? '📷 Cambiar Logo' : '📁 Cargar Logo'}
-                </label>
-                {logoUrl && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <img 
-                      src={logoUrl} 
-                      alt="Preview Logo" 
-                      style={{ height: '35px', maxWidth: '70px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
-                    />
-                    <button 
-                      onClick={quitarLogo}
-                      title="Quitar Logo"
-                      style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '0.85em' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
+              {logoUrl && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <img 
+                    src={logoUrl} 
+                    alt="Preview Logo" 
+                    style={{ height: '38px', maxWidth: '80px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
+                  />
+                  <button 
+                    onClick={quitarLogo}
+                    title="Quitar Logo"
+                    style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+
+          <div className="field-group">
+            <label className="field-label">Redes / Contacto:</label>
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder="Ej: IG: @mi_banda | www.mibanda.com" 
+              value={contactoRedes} 
+              onChange={(e) => setContactoRedes(e.target.value)}
+            />
+          </div>
         </div>
-      </header>
-      
+
+        {/* PRÓXIMO SHOW */}
+        <div className="section-block">
+          <h2 className="section-title-right">Próximo Show</h2>
+          
+          <div className="field-group">
+            <label className="field-label">Fecha:</label>
+            <input 
+              type="date" 
+              className="custom-input"
+              value={fecha} 
+              onChange={(e) => setFecha(e.target.value)}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Venue (Lugar):</label>
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder="Ej: Movistar Arena" 
+              value={venue} 
+              onChange={(e) => setVenue(e.target.value)}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label">Ciudad / País:</label>
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder="Ej: Buenos Aires, Argentina" 
+              value={ciudad} 
+              onChange={(e) => setCiudad(e.target.value)}
+            />
+          </div>
+        </div>
+
+      </section>
+
+      {/* ÁREA PRINCIPAL */}
       <main className="main-container">
         
         {/* BUSCADOR DE CANCIONES */}
-        <section className="columna-catalogo" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0, boxSizing: 'border-box' }}>
-          <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Buscador de Canciones</h2>
+        <section className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, boxSizing: 'border-box', border: '1px solid #2d2d38' }}>
+          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
+            Buscador
+          </h2>
           
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '6px', marginBottom: '12px', width: '100%', boxSizing: 'border-box' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box' }}>
             <input 
               type="text" 
+              className="custom-input"
               placeholder="Artista, canción..." 
               value={busqueda} 
               onChange={(e) => setBusqueda(e.target.value)}
-              style={{ flex: 1, minWidth: 0, padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '0.9em', boxSizing: 'border-box' }}
+              style={{ flex: 1, minWidth: 0 }}
             />
             <button 
               type="submit" 
               disabled={cargandoBusqueda}
-              style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '8px 10px', borderRadius: '4px', cursor: cargandoBusqueda ? 'wait' : 'pointer', fontWeight: 'bold', fontSize: '0.85em', flexShrink: 0 }}
+              className="btn-pill btn-metallic"
+              style={{ padding: '0 15px', height: '42px', borderRadius: '6px' }}
             >
-              {cargandoBusqueda ? '...' : '🔍 Buscar'}
+              <i className="fa-solid fa-magnifying-glass btn-icon"></i>
             </button>
           </form>
 
@@ -525,12 +537,12 @@ function App() {
             ) : resultados.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#888', padding: '15px 5px', fontSize: '0.85em' }}>
                 <p style={{ marginBottom: '10px' }}>Busca por artista o tema para armar tu setlist.</p>
-                <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
                   {['Soda Stereo', 'Queen', 'Whitesnake', 'Journey', 'Metallica'].map((term) => (
                     <button
                       key={term}
                       onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
-                      style={{ backgroundColor: '#333', color: '#4da6ff', border: '1px solid #555', borderRadius: '12px', padding: '2px 8px', fontSize: '0.75em', cursor: 'pointer' }}
+                      style={{ backgroundColor: '#2a2a32', color: '#a0a0c0', border: '1px solid #3f3f4e', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75em', cursor: 'pointer' }}
                     >
                       {term}
                     </button>
@@ -539,12 +551,12 @@ function App() {
               </div>
             ) : (
               discosAgrupados.map((disco) => (
-                <details key={disco.nombreDisco} open style={{ marginBottom: '6px', backgroundColor: '#333', borderRadius: '5px', overflow: 'hidden' }}>
-                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left', minWidth: 0 }}>
+                <details key={disco.nombreDisco} open style={{ marginBottom: '8px', backgroundColor: '#262630', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333342' }}>
+                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left', minWidth: 0 }}>
                     <img 
                       src={disco.artwork} 
                       alt={disco.nombreDisco} 
-                      style={{ width: '32px', height: '32px', marginRight: '8px', borderRadius: '3px', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }} 
+                      style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '4px', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }} 
                       onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
                     />
                     <div style={{ flex: '1', minWidth: 0, overflow: 'hidden' }}>
@@ -554,25 +566,25 @@ function App() {
                       </small>
                     </div>
                   </summary>
-                  <div style={{ padding: '0 6px 6px 6px' }}>
+                  <div style={{ padding: '0 8px 8px 8px' }}>
                     {disco.canciones.map((cancion) => {
                       const tituloLimpio = limpiarTituloCancion(cancion.trackName);
                       return (
-                        <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '6px 8px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
+                        <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e1e26', marginBottom: '4px', padding: '6px 10px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
                           <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
                             <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
                               {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
                             </strong>
-                            <small style={{ color: '#aaa', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
+                            <small style={{ color: '#888', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
                               {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
                             </small>
                           </div>
                           <button 
                             onClick={() => agregarAlSetlist(cancion)}
                             title="Agregar al setlist"
-                            style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '1em', flexShrink: 0 }}
+                            style={{ backgroundColor: '#388e3c', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
                           >
-                            +
+                            <i className="fa-solid fa-plus"></i>
                           </button>
                         </div>
                       );
@@ -585,15 +597,17 @@ function App() {
         </section>
 
         {/* SETLIST PRINCIPAL */}
-        <section className="columna-setlist" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
-            <h2 style={{ margin: '5px 0', fontSize: '1.2em' }}>Tu Setlist</h2>
+        <section className="columna-setlist" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, border: '1px solid #2d2d38' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
+            <h2 style={{ margin: '0', fontSize: '1.1em', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)' }}>
+              Tu Setlist
+            </h2>
             {setlistRenderizado.length > 0 && (
               <button 
                 onClick={vaciarSetlist}
-                style={{ backgroundColor: 'transparent', color: '#f44336', border: '1px solid #f44336', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em' }}
+                style={{ backgroundColor: 'transparent', color: '#f44336', border: '1px solid #f44336', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                🗑️ Vaciar Setlist
+                <i className="fa-regular fa-trash-can"></i> Vaciar
               </button>
             )}
           </div>
@@ -614,7 +628,7 @@ function App() {
                     backgroundColor: obtenerColorFondo(item), 
                     marginBottom: '8px', 
                     padding: '10px', 
-                    borderRadius: '5px', 
+                    borderRadius: '6px', 
                     display: 'flex', 
                     flexDirection: 'column',
                     gap: '10px',
@@ -626,16 +640,16 @@ function App() {
                   
                   {item.esTextoLibre ? (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <span style={{ color: '#888', cursor: 'grab', fontSize: '1em', paddingRight: '10px' }}>☰</span>
+                      <i className="fa-solid fa-grip-lines" style={{ color: '#777', cursor: 'grab', paddingRight: '10px' }}></i>
                       <input 
                         type="text" 
                         value={item.nombre} 
                         onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
-                        style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.2em', backgroundColor: 'transparent', border: 'none', color: '#fff', borderBottom: '1px dashed #666' }}
+                        style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1em', backgroundColor: 'transparent', border: 'none', color: '#fff', borderBottom: '1px dashed #666' }}
                       />
                       <button 
                         onClick={() => eliminarDelSetlist(item.idSetlist)}
-                        style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.8em', marginLeft: '10px' }}
+                        style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em', marginLeft: '10px' }}
                       >
                         Quitar
                       </button>
@@ -644,12 +658,11 @@ function App() {
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '200px' }}>
-                          <span style={{ color: '#888', cursor: 'grab', fontSize: '1em' }}>☰</span>
+                          <i className="fa-solid fa-grip-lines" style={{ color: '#777', cursor: 'grab' }}></i>
                           <span style={{ fontWeight: 'bold', fontSize: '1em' }}>
                             {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)}
                             {item.esEspecial && '🎭 '}
                           </span>
-                          {/* NOMBRE DE LA CANCIÓN EDITABLE EN EL SETLIST */}
                           <input 
                             type="text" 
                             value={item.nombre} 
@@ -665,16 +678,16 @@ function App() {
                               padding: '2px 4px',
                               borderRadius: '3px'
                             }}
-                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #4da6ff'}
+                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #8a8a9e'}
                             onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                             title="Haz clic para editar el nombre"
                           />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85em' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
+                          <span style={{ fontSize: '0.85em', color: '#aaa' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
                           <button 
                             onClick={() => eliminarDelSetlist(item.idSetlist)}
-                            style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.8em' }}
+                            style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em' }}
                           >
                             Quitar
                           </button>
@@ -683,25 +696,23 @@ function App() {
 
                       <div className="controles-cancion">
                         {!item.esEspecial && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }} title="Pista / Tape">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Pista / Tape">
                             <input 
                               type="checkbox" 
                               checked={item.esTape} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'esTape', e.target.checked)} 
-                              style={{ transform: 'scale(1.2)' }}
                             />
-                            <span style={{ fontSize: '1.2em' }}>📼</span>
+                            <span>📼</span>
                           </label>
                         )}
                         
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer' }} title="Enganchada al siguiente track">
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Enganchada al siguiente track">
                           <input 
                             type="checkbox" 
                             checked={item.enganchada} 
                             onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
-                            style={{ transform: 'scale(1.2)' }}
                           />
-                          <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#4CAF50' : '#888' }}>{'>'}</strong>
+                          <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#4CAF50' : '#777' }}>{'>'}</strong>
                         </label>
 
                         {item.esEspecial ? (
@@ -711,7 +722,7 @@ function App() {
                               type="number" 
                               value={item.duracionBase / 60} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'duracionBase', Number(e.target.value) * 60)}
-                              style={{ width: '45px', padding: '4px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
+                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
                             />
                           </label>
                         ) : (
@@ -721,7 +732,7 @@ function App() {
                               type="number" 
                               value={item.tiempoExtra} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'tiempoExtra', e.target.value)}
-                              style={{ width: '45px', padding: '4px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
+                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
                             />
                           </label>
                         )}
@@ -731,7 +742,7 @@ function App() {
                           placeholder="Notas..." 
                           value={item.notas} 
                           onChange={(e) => actualizarItemSetlist(item.idSetlist, 'notas', e.target.value)}
-                          style={{ flex: '1', minWidth: '100px', padding: '5px 8px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
+                          style={{ flex: '1', minWidth: '100px', padding: '4px 8px', borderRadius: '3px', border: 'none', fontSize: '1em', backgroundColor: '#1c1c24', color: '#fff' }}
                         />
                       </div>
                     </>
@@ -744,44 +755,50 @@ function App() {
         </section>
 
         {/* PANEL DE CONTROL */}
-        <section className="columna-panel" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0 }}>
-          <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Panel de Control</h2>
+        <section className="columna-panel" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, border: '1px solid #2d2d38' }}>
+          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
+            Panel de Control
+          </h2>
           
           <button 
             onClick={() => setMostrarPreview(true)}
             disabled={setlistRenderizado.length === 0}
-            style={{ width: '100%', backgroundColor: setlistRenderizado.length > 0 ? '#ff9800' : '#555', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '1.1em', marginBottom: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+            className="btn-pill btn-metallic"
+            style={{ width: '100%', borderRadius: '8px', padding: '12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '1em', marginBottom: '15px', justifyContent: 'center' }}
           >
-            🔍 VISTA PREVIA DEL PDF
+            <i className="fa-regular fa-file-pdf btn-icon"></i>
+            <span>VISTA PREVIA DEL PDF</span>
           </button>
 
-          <div style={{ backgroundColor: '#111', padding: '15px', borderRadius: '6px', textAlign: 'center', marginBottom: '15px' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#aaa', fontSize: '0.9em' }}>Tiempo Total Estimado</h3>
-            <div style={{ fontSize: '2.2em', fontWeight: 'bold', color: '#4CAF50' }}>
+          <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#888', fontSize: '0.85em', textTransform: 'uppercase' }}>Tiempo Total Estimado</h3>
+            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#4CAF50' }}>
               {formatearTiempoTotal(tiempoTotalShow)}
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#333', padding: '15px', borderRadius: '5px', marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '0.9em' }}>
+          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
+            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '0.85em', color: '#aaa' }}>
               Tiempo muerto (Gap) en seg:
             </label>
             <input 
               type="number" 
               value={gap} 
               onChange={(e) => setGap(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em' }}
+              className="custom-input"
+              style={{ width: '100%' }}
             />
           </div>
 
-          <div style={{ backgroundColor: '#333', padding: '15px', borderRadius: '5px' }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1em' }}>Insertar Bloque</h3>
+          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', border: '1px solid #333342' }}>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '0.95em', textTransform: 'uppercase', color: '#ccc' }}>Insertar Bloque</h3>
             
-            <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Tipo:</label>
+            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Tipo:</label>
             <select 
               value={tipoEspecial} 
               onChange={(e) => setTipoEspecial(e.target.value)}
-              style={{ width: '100%', padding: '8px', marginBottom: '12px', borderRadius: '4px', border: 'none', boxSizing: 'border-box', fontSize: '1em' }}
+              className="custom-input"
+              style={{ width: '100%', marginBottom: '10px' }}
             >
               <option value="Speech">Speech</option>
               <option value="Intervalo">Intervalo</option>
@@ -792,51 +809,57 @@ function App() {
 
             {tipoEspecial === "Texto Libre" ? (
               <>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Texto a mostrar:</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Texto a mostrar:</label>
                 <input 
                   type="text" 
                   value={textoLibre} 
                   onChange={(e) => setTextoLibre(e.target.value)}
                   placeholder="Ej: SET 1"
-                  style={{ width: '100%', padding: '8px', marginBottom: '15px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em', textTransform: 'uppercase' }}
+                  className="custom-input"
+                  style={{ width: '100%', marginBottom: '12px', textTransform: 'uppercase' }}
                 />
               </>
             ) : tipoEspecial === "Canción" ? (
               <>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Nombre de la canción:</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Nombre de la canción:</label>
                 <input 
                   type="text" 
                   value={nombreCancionExtra} 
                   onChange={(e) => setNombreCancionExtra(e.target.value)}
                   placeholder="Ej: Song Title"
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em' }}
+                  className="custom-input"
+                  style={{ width: '100%', marginBottom: '8px' }}
                 />
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Duración (mm:ss):</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Duración (mm:ss):</label>
                 <input 
                   type="text" 
                   value={duracionCancionExtra} 
                   onChange={(e) => setDuracionCancionExtra(e.target.value)}
                   placeholder="03:30"
-                  style={{ width: '100%', padding: '8px', marginBottom: '15px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em' }}
+                  className="custom-input"
+                  style={{ width: '100%', marginBottom: '12px' }}
                 />
               </>
             ) : (
               <>
-                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Minutos estimados:</label>
+                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Minutos estimados:</label>
                 <input 
                   type="number" 
                   value={minutosEspecial} 
                   onChange={(e) => setMinutosEspecial(e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginBottom: '15px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em' }}
+                  className="custom-input"
+                  style={{ width: '100%', marginBottom: '12px' }}
                 />
               </>
             )}
 
             <button 
               onClick={agregarBloqueEspecial}
-              style={{ width: '100%', backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1em' }}
+              className="btn-pill btn-metallic"
+              style={{ width: '100%', borderRadius: '6px', justifyContent: 'center' }}
             >
-              + Agregar Bloque
+              <i className="fa-solid fa-plus btn-icon"></i>
+              <span>Agregar Bloque</span>
             </button>
           </div>
 
@@ -848,45 +871,43 @@ function App() {
       {mostrarPreview && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
           
-          <div style={{ backgroundColor: '#2a2a2a', padding: '20px', borderRadius: '8px', width: '100%', maxWidth: '900px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+          <div style={{ backgroundColor: '#1e1e24', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '900px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid #3f3f4e' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid #444', paddingBottom: '15px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid #333340', paddingBottom: '15px', flexWrap: 'wrap' }}>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                {/* Control Interlineado */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Interlineado:</span>
-                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} style={{ padding: '5px 12px', fontSize: '1.2em', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#444', color: '#fff' }}>-</button>
-                  <span style={{ fontSize: '1.2em', fontWeight: 'bold', width: '30px', textAlign: 'center' }}>{espaciadoPdf}</span>
-                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} style={{ padding: '5px 12px', fontSize: '1.2em', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#444', color: '#fff' }}>+</button>
+                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>-</button>
+                  <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
+                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>+</button>
                 </div>
                 
-                {/* Control Tamaño de Fuente */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #555' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #333340' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Fuente:</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} style={{ padding: '5px 12px', fontSize: '1.2em', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#444', color: '#fff' }}>-</button>
-                  <span style={{ fontSize: '1.2em', fontWeight: 'bold', width: '30px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} style={{ padding: '5px 12px', fontSize: '1.2em', cursor: 'pointer', borderRadius: '4px', border: 'none', backgroundColor: '#444', color: '#fff' }}>+</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>-</button>
+                  <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
+                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>+</button>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button 
                   onClick={() => procesarPDF('descargar')}
-                  style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1em' }}
+                  style={{ backgroundColor: '#388e3c', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  📥 DESCARGAR PDF
+                  <i className="fa-solid fa-download"></i> Descargar PDF
                 </button>
                 <button 
                   onClick={() => setMostrarPreview(false)}
-                  style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '10px 15px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1em' }}
+                  style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em' }}
                 >
-                  ✕ CERRAR
+                  ✕ Cerrar
                 </button>
               </div>
             </div>
 
-            <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
               {cargandoPdf && (
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontSize: '1.2em', fontWeight: 'bold', zIndex: 10 }}>
                   Generando vista previa... ⏳
@@ -903,7 +924,7 @@ function App() {
             </div>
 
             <div style={{ textAlign: 'center', fontSize: '0.8em', color: '#aaa' }}>
-              * Si la hoja no se muestra correctamente en tu celular, <a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: '#4da6ff', textDecoration: 'underline'}}>tocá acá para verla en otra pestaña</a>.
+              * Si la hoja no se muestra correctamente en tu celular, <a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: '#8a8a9e', textDecoration: 'underline'}}>tocá acá para verla en otra pestaña</a>.
             </div>
 
           </div>
@@ -944,12 +965,10 @@ function App() {
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'baseline' }}>
                     
-                    {/* Número de track o ícono */}
                     <div style={{ width: `${Math.max(55, tamanoFuentePdf * 2)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
                       {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
                     </div>
                     
-                    {/* Contenedor del nombre y notas */}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '15px' }}>
                       <span style={{ 
                         fontSize: `${tamanoFuentePdf}px`, 
