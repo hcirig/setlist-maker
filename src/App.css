@@ -1,0 +1,77 @@
+/* =========================================
+   ESTILOS RESPONSIVES PARA SETLIST MAKER
+   ========================================= */
+
+/* Comportamiento base (Celulares) */
+.logo-responsive {
+  height: 80px;
+}
+
+.header-inputs {
+  display: flex;
+  gap: 15px;
+  flex-direction: column; /* Apila los inputs de fecha, venue y ciudad */
+  background-color: #2a2a2a;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.main-container {
+  display: flex;
+  gap: 15px;
+  flex-direction: column; /* Apila las 3 columnas principales */
+}
+
+.columna-catalogo, .columna-panel, .columna-setlist {
+  flex: auto;
+  width: 100%;
+}
+
+.scroll-area {
+  /* En celular dejamos que la página entera haga scroll natural */
+  max-height: none; 
+  overflow-y: visible;
+  padding-right: 5px;
+}
+
+.controles-cancion {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background-color: rgba(0,0,0,0.2);
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 0.75em;
+  flex-wrap: wrap; /* Permite que los inputs se acomoden abajo si la pantalla es muy fina */
+}
+
+/* Comportamiento para PC y Tablets horizontales */
+@media (min-width: 992px) {
+  .logo-responsive {
+    height: 120px;
+  }
+  
+  .header-inputs {
+    flex-direction: row; /* Pone los inputs uno al lado del otro */
+  }
+
+  .main-container {
+    flex-direction: row; /* Restaura las 3 columnas una al lado de la otra */
+  }
+
+  .columna-catalogo, .columna-panel {
+    flex: 1;
+    width: auto;
+  }
+
+  .columna-setlist {
+    flex: 2; /* Le da el doble de ancho a la columna central */
+    width: auto;
+  }
+
+  .scroll-area {
+    /* En PC restauramos el límite de alto para que tenga scroll interno */
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+}
