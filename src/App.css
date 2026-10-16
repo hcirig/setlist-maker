@@ -1,25 +1,26 @@
 /* =========================================
-   ESTILOS RESPONSIVES PARA SETLIST MAKER
+   ESTILOS RESPONSIVES PARA SETLIST MAKER V2
    ========================================= */
-
-/* Comportamiento base (Celulares) */
-.logo-responsive {
-  height: 80px;
-}
 
 .header-inputs {
   display: flex;
   gap: 15px;
-  flex-direction: column; /* Apila los inputs de fecha, venue y ciudad */
+  flex-direction: column;
   background-color: #2a2a2a;
   padding: 15px;
   border-radius: 8px;
 }
 
+.header-row {
+  display: flex;
+  gap: 15px;
+  flex-direction: column;
+}
+
 .main-container {
   display: flex;
   gap: 15px;
-  flex-direction: column; /* Apila las 3 columnas principales */
+  flex-direction: column; /* Apila las 3 columnas principales en celular */
 }
 
 .columna-catalogo, .columna-panel, .columna-setlist {
@@ -28,7 +29,6 @@
 }
 
 .scroll-area {
-  /* En celular dejamos que la página entera haga scroll natural */
   max-height: none; 
   overflow-y: visible;
   padding-right: 5px;
@@ -42,21 +42,21 @@
   padding: 6px;
   border-radius: 4px;
   font-size: 0.75em;
-  flex-wrap: wrap; /* Permite que los inputs se acomoden abajo si la pantalla es muy fina */
+  flex-wrap: wrap;
 }
 
-/* Comportamiento para PC y Tablets horizontales */
+/* Adaptación para Pantallas Grandes (PC / Tablet Horizontal) */
 @media (min-width: 992px) {
-  .logo-responsive {
-    height: 120px;
-  }
-  
   .header-inputs {
-    flex-direction: row; /* Pone los inputs uno al lado del otro */
+    flex-direction: column;
+  }
+
+  .header-row {
+    flex-direction: row;
   }
 
   .main-container {
-    flex-direction: row; /* Restaura las 3 columnas una al lado de la otra */
+    flex-direction: row; /* Restaura 3 columnas una al lado de la otra */
   }
 
   .columna-catalogo, .columna-panel {
@@ -65,12 +65,11 @@
   }
 
   .columna-setlist {
-    flex: 2; /* Le da el doble de ancho a la columna central */
+    flex: 2; /* Ocupa el doble de ancho en el centro */
     width: auto;
   }
 
   .scroll-area {
-    /* En PC restauramos el límite de alto para que tenga scroll interno */
     max-height: 75vh;
     overflow-y: auto;
   }

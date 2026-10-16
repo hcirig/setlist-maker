@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import html2pdf from 'html2pdf.js'
-import cancionesData from './canciones.json'
 import './App.css'
 
 const formatearTiempo = (segundosTotales) => {
@@ -16,32 +15,38 @@ const formatearTiempoTotal = (segundosTotales) => {
   return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
 };
 
-const formatearNombreImagen = (nombreDisco) => {
-  if (!nombreDisco) return 'default.jpg';
-  return nombreDisco.toLowerCase().replace(/[^a-z0-9]/g, '') + '.jpg';
-};
-
 function App() {
-  const [catalogo] = useState(cancionesData);
+  // Buscador e integración API iTunes
+  const [busqueda, setBusqueda] = useState('');
+  const [resultados, setResultados] = useState([]);
+  const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
+  const [errorBusqueda, setErrorBusqueda] = useState(null);
+
+  // Estado del Setlist
   const [setlist, setSetlist] = useState([]);
   const [gap, setGap] = useState(15);
   
+  // Configuración e impresión de PDF
   const [espaciadoPdf, setEspaciadoPdf] = useState(18);
   const [tamanoFuentePdf, setTamanoFuentePdf] = useState(28);
   const [mostrarPreview, setMostrarPreview] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
 
+  // Bloques especiales y extras
   const [tipoEspecial, setTipoEspecial] = useState("Speech");
   const [minutosEspecial, setMinutosEspecial] = useState(2);
   const [textoLibre, setTextoLibre] = useState("SET 1");
-  
   const [nombreCancionExtra, setNombreCancionExtra] = useState("");
   const [duracionCancionExtra, setDuracionCancionExtra] = useState("03:30");
 
+  // Datos del Show y Banda (Universales)
   const [fecha, setFecha] = useState("");
   const [venue, setVenue] = useState("");
   const [ciudad, setCiudad] = useState("");
+  const [contactoRedes, setContactoRedes] = useState("");
+  const [logoUrl, setLogoUrl] = useState(null);
+  const [logoDimensions, setLogoDimensions] = useState({ width: 0, height: 0 });
 
   const dragItem = useRef();
   const dragOverItem = useRef();
@@ -57,17 +62,68 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf]);
 
+  // Búsqueda en API iTunes
+  const ejecutarBusqueda = async (termino) => {
+    const query = termino || busqueda;
+    if (!query.trim()) return;
+
+    setCargandoBusqueda(true);
+    setErrorBusqueda(null);
+    try {
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=50`);
+      if (!res.ok) throw new Error('Error al conectar con el servidor de música.');
+      const data = await res.json();
+      setResultados(data.results || []);
+    } catch (err) {
+      setErrorBusqueda('No se pudieron obtener resultados. Revisa tu conexión.');
+    } finally {
+      setCargandoBusqueda(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    ejecutarBusqueda();
+  };
+
+  // Carga e inspección de dimensiones del Logo de la banda
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const dataUrl = uploadEvent.target.result;
+        const img = new Image();
+        img.onload = () => {
+          setLogoDimensions({ width: img.width, height: img.height });
+          setLogoUrl(dataUrl);
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const quitarLogo = () => {
+    setLogoUrl(null);
+    setLogoDimensions({ width: 0, height: 0 });
+  };
+
   const agruparPorDisco = () => {
     const agrupado = {};
-    catalogo.forEach((cancion) => {
-      if (!agrupado[cancion.disco]) {
-        agrupado[cancion.disco] = {
-          nombreDisco: cancion.disco,
-          anio: cancion.anio,
+    resultados.forEach((track) => {
+      const discoNombre = track.collectionName || 'Sencillos / Varios';
+      if (!agrupado[discoNombre]) {
+        const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : null;
+        agrupado[discoNombre] = {
+          nombreDisco: discoNombre,
+          artista: track.artistName,
+          anio: releaseYear,
+          artwork: track.artworkUrl100 || track.artworkUrl60,
           canciones: []
         };
       }
-      agrupado[cancion.disco].canciones.push(cancion);
+      agrupado[discoNombre].canciones.push(track);
     });
 
     return Object.values(agrupado).sort((a, b) => {
@@ -80,10 +136,16 @@ function App() {
   const discosAgrupados = agruparPorDisco();
 
   const agregarAlSetlist = (cancion) => {
+    const duracionSegundos = Math.round((cancion.trackTimeMillis || 0) / 1000);
     const nuevaEjecucion = {
-      ...cancion,
-      idSetlist: Date.now().toString(),
-      duracionBase: cancion.duracion,
+      idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
+      id: cancion.trackId,
+      nombre: cancion.trackName,
+      disco: cancion.collectionName || 'Sin Álbum',
+      artista: cancion.artistName,
+      track: cancion.trackNumber,
+      duracionBase: duracionSegundos,
+      duracion: duracionSegundos,
       esTape: false,
       enganchada: false,
       notas: "",
@@ -100,7 +162,7 @@ function App() {
 
     if (tipoEspecial === "Texto Libre") {
       nuevoBloque = {
-        idSetlist: Date.now().toString(),
+        idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
         nombre: textoLibre,
         duracionBase: 0,
         esTape: false,
@@ -121,7 +183,7 @@ function App() {
       }
       
       nuevoBloque = {
-        idSetlist: Date.now().toString(),
+        idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
         nombre: nombreCancionExtra || "Canción sin título",
         duracionBase: segs,
         esTape: false,
@@ -137,7 +199,7 @@ function App() {
     } else {
       const duracionSegundos = Number(minutosEspecial) * 60;
       nuevoBloque = {
-        idSetlist: Date.now().toString(),
+        idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
         nombre: tipoEspecial,
         duracionBase: duracionSegundos,
         esTape: false,
@@ -206,19 +268,25 @@ function App() {
 
   const procesarPDF = (accion) => {
     const elemento = document.getElementById('setlist-pdf-contenedor');
-    const logoElement = document.getElementById('logo-header');
     
-    let logoWidth = 40;
-    const logoHeight = 20;
-    
-    if (logoElement && logoElement.naturalWidth && logoElement.naturalHeight) {
-      const ratio = logoElement.naturalWidth / logoElement.naturalHeight;
-      logoWidth = logoHeight * ratio;
+    let logoWidth = 0;
+    const logoHeight = 20; // 20mm
+    let textStartX = 10;
+
+    if (logoUrl) {
+      if (logoDimensions.height > 0) {
+        const ratio = logoDimensions.width / logoDimensions.height;
+        logoWidth = logoHeight * ratio;
+        if (logoWidth > 55) logoWidth = 55; // Límite máximo de ancho
+      } else {
+        logoWidth = 30;
+      }
+      textStartX = 10 + logoWidth + 5;
     }
 
     const opciones = {
       margin:       [35, 10, 15, 10], 
-      filename:     `Setlist-TheGhoulParty-${fecha || 'Show'}.pdf`,
+      filename:     `Setlist-${venue ? venue.trim().replace(/\s+/g, '_') + '-' : ''}${fecha || 'Show'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -239,23 +307,28 @@ function App() {
         if (fecha) {
           const partes = fecha.split('-'); 
           if (partes.length === 3) {
-            fechaStr = `${partes[2]}/${partes[1]}/${partes[0]}`; 
+            fechaStr = `Fecha: ${partes[2]}/${partes[1]}/${partes[0]}`; 
           }
         }
 
-        const venueStr = venue || 'Lugar: _____';
-        const ciudadStr = ciudad || 'Ciudad: _____';
-        const textStartX = 10 + logoWidth + 5; 
+        const venueStr = venue ? `Lugar: ${venue}` : 'Lugar: _____';
+        const ciudadStr = ciudad ? `Ciudad: ${ciudad}` : 'Ciudad: _____';
 
         for (let i = 1; i <= totalPages; i++) {
           pdf.setPage(i);
 
-          try {
-            if (logoElement) {
-              pdf.addImage(logoElement, 'PNG', 10, 10, logoWidth, logoHeight);
+          if (logoUrl) {
+            try {
+              let imgFormat = 'PNG';
+              if (logoUrl.startsWith('data:image/jpeg') || logoUrl.startsWith('data:image/jpg')) {
+                imgFormat = 'JPEG';
+              } else if (logoUrl.startsWith('data:image/webp')) {
+                imgFormat = 'WEBP';
+              }
+              pdf.addImage(logoUrl, imgFormat, 10, 10, logoWidth, logoHeight);
+            } catch (e) {
+              console.warn("No se pudo insertar el logo en el PDF", e);
             }
-          } catch (e) {
-            console.warn("No se pudo cargar el logo en el PDF", e);
           }
 
           pdf.setFontSize(12);
@@ -270,8 +343,11 @@ function App() {
           pdf.setLineWidth(0.5);
           pdf.line(10, pageHeight - 12, pageWidth - 10, pageHeight - 12);
 
-          pdf.setFontSize(11);
-          pdf.text('IG: @theghoulparty | YT: @TheGhoulPartyAr', pageWidth / 2, pageHeight - 7, { align: 'center' });
+          if (contactoRedes.trim()) {
+            pdf.setFontSize(11);
+            pdf.setFont("helvetica", "normal");
+            pdf.text(contactoRedes.trim(), pageWidth / 2, pageHeight - 7, { align: 'center' });
+          }
         }
 
         if (accion === 'preview') {
@@ -305,87 +381,193 @@ function App() {
     <div style={{ fontFamily: 'sans-serif', padding: '15px', backgroundColor: '#1a1a1a', color: '#fff', minHeight: '100vh', fontSize: '0.9em' }}>
       
       <header style={{ borderBottom: '1px solid #444', paddingBottom: '15px', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '15px', marginBottom: '15px', flexWrap: 'wrap', textAlign: 'center' }}>
-          <img 
-            id="logo-header"
-            src="./img/logo.png" 
-            alt="Logo" 
-            className="logo-responsive"
-            style={{ objectFit: 'contain' }} 
-            onError={(e) => { e.target.style.display = 'none'; }}
-          />
-          <h1 style={{ margin: 0, fontSize: '2.5em' }}>Setlist Maker</h1>
+        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <h1 style={{ margin: 0, fontSize: '2.5em', letterSpacing: '-1px' }}>Setlist Maker</h1>
+          <p style={{ margin: '4px 0 0 0', color: '#aaa', fontSize: '0.9em' }}>Crea y personaliza el setlist de tu banda listo para imprimir</p>
         </div>
 
         <div className="header-inputs">
-          <label style={{ display: 'flex', flexDirection: 'column', flex: '1', fontWeight: 'bold', fontSize: '0.9em' }}>
-            Fecha:
-            <input 
-              type="date" 
-              value={fecha} 
-              onChange={(e) => setFecha(e.target.value)}
-              style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-            />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
-            Venue (Lugar):
-            <input 
-              type="text" 
-              placeholder="Ej: Movistar Arena" 
-              value={venue} 
-              onChange={(e) => setVenue(e.target.value)}
-              style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-            />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
-            Ciudad / País:
-            <input 
-              type="text" 
-              placeholder="Ej: Buenos Aires, Argentina" 
-              value={ciudad} 
-              onChange={(e) => setCiudad(e.target.value)}
-              style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
-            />
-          </label>
+          <div className="header-row">
+            <label style={{ display: 'flex', flexDirection: 'column', flex: '1', fontWeight: 'bold', fontSize: '0.9em' }}>
+              Fecha:
+              <input 
+                type="date" 
+                value={fecha} 
+                onChange={(e) => setFecha(e.target.value)}
+                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
+              Venue (Lugar):
+              <input 
+                type="text" 
+                placeholder="Ej: Movistar Arena" 
+                value={venue} 
+                onChange={(e) => setVenue(e.target.value)}
+                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
+              Ciudad / País:
+              <input 
+                type="text" 
+                placeholder="Ej: Buenos Aires, Argentina" 
+                value={ciudad} 
+                onChange={(e) => setCiudad(e.target.value)}
+                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
+              />
+            </label>
+          </div>
+
+          <div className="header-row">
+            <label style={{ display: 'flex', flexDirection: 'column', flex: '2', fontWeight: 'bold', fontSize: '0.9em' }}>
+              Redes / Contacto (Pie del PDF):
+              <input 
+                type="text" 
+                placeholder="Ej: IG: @mi_banda | Spotify: Mi Banda | www.mibanda.com" 
+                value={contactoRedes} 
+                onChange={(e) => setContactoRedes(e.target.value)}
+                style={{ marginTop: '5px', padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '1em' }}
+              />
+            </label>
+
+            <div style={{ display: 'flex', flexDirection: 'column', flex: '1.5', fontWeight: 'bold', fontSize: '0.9em' }}>
+              <span>Logo de la Banda (para PDF):</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  id="logo-upload"
+                  onChange={handleLogoChange}
+                  style={{ display: 'none' }}
+                />
+                <label 
+                  htmlFor="logo-upload"
+                  style={{ 
+                    backgroundColor: '#333', 
+                    color: '#fff', 
+                    padding: '8px 12px', 
+                    borderRadius: '4px', 
+                    border: '1px solid #555', 
+                    cursor: 'pointer',
+                    fontSize: '0.9em',
+                    textAlign: 'center',
+                    flex: '1'
+                  }}
+                >
+                  {logoUrl ? '📷 Cambiar Logo' : '📁 Cargar Logo'}
+                </label>
+                {logoUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <img 
+                      src={logoUrl} 
+                      alt="Preview Logo" 
+                      style={{ height: '35px', maxWidth: '70px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
+                    />
+                    <button 
+                      onClick={quitarLogo}
+                      title="Quitar Logo"
+                      style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '4px', padding: '6px 10px', cursor: 'pointer', fontSize: '0.85em' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </header>
       
       <main className="main-container">
         
+        {/* BUSCADOR DE CANCIONES */}
         <section className="columna-catalogo" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
-          <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Catálogo</h2>
+          <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Buscador de Canciones</h2>
+          
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <input 
+              type="text" 
+              placeholder="Artista, canción o disco..." 
+              value={busqueda} 
+              onChange={(e) => setBusqueda(e.target.value)}
+              style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #444', backgroundColor: '#111', color: '#fff', fontSize: '0.95em' }}
+            />
+            <button 
+              type="submit" 
+              disabled={cargandoBusqueda}
+              style={{ backgroundColor: '#2196F3', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: cargandoBusqueda ? 'wait' : 'pointer', fontWeight: 'bold' }}
+            >
+              {cargandoBusqueda ? '...' : '🔍 Buscar'}
+            </button>
+          </form>
+
           <div className="scroll-area">
-            {discosAgrupados.map((disco) => (
-              <details key={disco.nombreDisco} style={{ marginBottom: '6px', backgroundColor: '#333', borderRadius: '5px' }}>
-                <summary style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left' }}>
-                  <img 
-                    src={`./img/${formatearNombreImagen(disco.nombreDisco)}`} 
-                    alt={disco.nombreDisco} 
-                    style={{ width: '28px', height: '28px', marginRight: '10px', borderRadius: '3px', objectFit: 'cover', backgroundColor: '#111' }} 
-                  />
-                  <span>{disco.anio ? `${disco.anio} - ` : ''}{disco.nombreDisco}</span>
-                </summary>
-                <div style={{ padding: '0 8px 8px 8px' }}>
-                  {disco.canciones.map((cancion) => (
-                    <div key={cancion.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '5px 8px', borderRadius: '4px', gap: '8px' }}>
-                      <div style={{ textAlign: 'left', flex: '1', minWidth: 0 }}>
-                        <strong style={{ fontSize: '0.8em', display: 'block' }}>{cancion.track}. {cancion.nombre}</strong>
-                        <small style={{ color: '#aaa', fontSize: '0.7em' }}>{formatearTiempo(cancion.duracion)}</small>
-                      </div>
-                      <button 
-                        onClick={() => agregarAlSetlist(cancion)}
-                        style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '3px', cursor: 'pointer', fontSize: '1.1em', flexShrink: 0 }}
-                      >
-                        +
-                      </button>
-                    </div>
+            {cargandoBusqueda ? (
+              <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Buscando en catálogo global... 🎵</p>
+            ) : errorBusqueda ? (
+              <p style={{ color: '#f44336', textAlign: 'center', padding: '10px 0' }}>{errorBusqueda}</p>
+            ) : resultados.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: '20px 10px', fontSize: '0.85em' }}>
+                <p style={{ marginBottom: '10px' }}>Escribe el nombre de tu banda, artista o canción para buscar canciones publicadas.</p>
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+                  <span style={{ fontSize: '0.8em', color: '#aaa' }}>Sugerencias:</span>
+                  {['Queen', 'Soda Stereo', 'Metallica', 'Ghost', 'Coldplay'].map((term) => (
+                    <button
+                      key={term}
+                      onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
+                      style={{ backgroundColor: '#333', color: '#4da6ff', border: '1px solid #555', borderRadius: '12px', padding: '2px 8px', fontSize: '0.75em', cursor: 'pointer' }}
+                    >
+                      {term}
+                    </button>
                   ))}
                 </div>
-              </details>
-            ))}
+              </div>
+            ) : (
+              discosAgrupados.map((disco) => (
+                <details key={disco.nombreDisco} open style={{ marginBottom: '6px', backgroundColor: '#333', borderRadius: '5px' }}>
+                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left' }}>
+                    <img 
+                      src={disco.artwork} 
+                      alt={disco.nombreDisco} 
+                      style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '3px', objectFit: 'cover', backgroundColor: '#111' }} 
+                      onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                    />
+                    <div style={{ flex: '1', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div>{disco.nombreDisco}</div>
+                      <small style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.85em' }}>
+                        {disco.artista} {disco.anio ? `• ${disco.anio}` : ''}
+                      </small>
+                    </div>
+                  </summary>
+                  <div style={{ padding: '0 8px 8px 8px' }}>
+                    {disco.canciones.map((cancion) => (
+                      <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '5px 8px', borderRadius: '4px', gap: '8px' }}>
+                        <div style={{ textAlign: 'left', flex: '1', minWidth: 0 }}>
+                          <strong style={{ fontSize: '0.8em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{cancion.trackName}
+                          </strong>
+                          <small style={{ color: '#aaa', fontSize: '0.7em' }}>
+                            {cancion.artistName} • {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
+                          </small>
+                        </div>
+                        <button 
+                          onClick={() => agregarAlSetlist(cancion)}
+                          title="Agregar al setlist"
+                          style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '3px', cursor: 'pointer', fontSize: '1.1em', flexShrink: 0 }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ))
+            )}
           </div>
         </section>
 
+        {/* SETLIST PRINCIPAL */}
         <section className="columna-setlist" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '10px' }}>
             <h2 style={{ margin: '5px 0', fontSize: '1.2em' }}>Tu Setlist</h2>
@@ -400,7 +582,7 @@ function App() {
           </div>
           
           {setlistRenderizado.length === 0 ? (
-            <p style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9em' }}>Agrega canciones desde el catálogo para empezar...</p>
+            <p style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9em' }}>Busca y agrega canciones desde el catálogo para armar tu lista...</p>
           ) : (
             <div className="scroll-area">
               {setlistRenderizado.map((item, index) => (
@@ -524,6 +706,7 @@ function App() {
           )}
         </section>
 
+        {/* PANEL DE CONTROL */}
         <section className="columna-panel" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px' }}>
           <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Panel de Control</h2>
           
@@ -588,7 +771,7 @@ function App() {
                   type="text" 
                   value={nombreCancionExtra} 
                   onChange={(e) => setNombreCancionExtra(e.target.value)}
-                  placeholder="Ej: Enter Sandman"
+                  placeholder="Ej: Song Title"
                   style={{ width: '100%', padding: '8px', marginBottom: '10px', borderRadius: '4px', border: 'none', backgroundColor: '#fff', color: '#000', boxSizing: 'border-box', fontSize: '1em' }}
                 />
                 <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.85em', color: '#ccc' }}>Duración (mm:ss):</label>
@@ -690,7 +873,7 @@ function App() {
         </div>
       )}
 
-      {/* MOLDE OCULTO DEL PDF CON NOTAS EN LA MISMA FILA */}
+      {/* MOLDE OCULTO DEL PDF */}
       <div style={{ position: 'absolute', top: '-20000px', left: '-20000px' }}>
         <div 
           id="setlist-pdf-contenedor" 
@@ -729,7 +912,7 @@ function App() {
                       {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
                     </div>
                     
-                    {/* Contenedor del nombre y la nota en la misma fila */}
+                    {/* Contenedor del nombre y notas */}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '15px' }}>
                       <span style={{ 
                         fontSize: `${tamanoFuentePdf}px`, 
