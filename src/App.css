@@ -1,26 +1,187 @@
 /* =========================================
-   ESTILOS RESPONSIVES PARA SETLIST MAKER V2
+   ESTILOS GENERALES Y REDISEÑO MODERNO V2.5
    ========================================= */
 
-.header-inputs {
-  display: flex;
-  gap: 15px;
-  flex-direction: column;
-  background-color: #2a2a2a;
-  padding: 15px;
-  border-radius: 8px;
+:root {
+  --bg-dark: #121212;
+  --panel-bg: #1e1e24;
+  --input-bg: #2a2a32;
+  --input-border: #3f3f4e;
+  --text-main: #e0e0e0;
+  --text-muted: #9e9ea8;
+  --accent-color: #8a8a9e;
+  --accent-hover: #b0b0c5;
+  --accent-click: #6a6a7c;
+  --btn-pill-bg: #2d2d38;
 }
 
-.header-row {
-  display: flex;
-  gap: 15px;
-  flex-direction: column;
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
+/* Header */
+.app-header {
+  border-bottom: 1px solid #2d2d35;
+  padding: 20px 15px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.header-banner {
+  max-width: 500px;
+  max-height: 150px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+  display: block;
+}
+
+/* Secciones divididas: Mi Banda & Próximo Show */
+.band-show-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background-color: var(--panel-bg);
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #2d2d38;
+}
+
+.section-block {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title-right {
+  text-align: right;
+  margin: 0 0 8px 0;
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #333340;
+  padding-bottom: 6px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Inputs y Selects Estandarizados */
+.custom-input {
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--input-border);
+  background-color: var(--input-bg);
+  color: var(--text-main);
+  font-size: 0.95em;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.custom-input:focus {
+  border-color: var(--accent-hover);
+  background-color: #32323d;
+}
+
+/* Ajuste específico para calendario */
+input[type="date"].custom-input {
+  color-scheme: dark;
+}
+
+/* Botón Cargar Logo (Estilo Píldora / Medios Círculos) */
+.btn-pill {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 9999px; /* Bordes redondeados al máximo */
+  border: 1px solid var(--input-border);
+  background-color: var(--btn-pill-bg);
+  color: var(--text-main);
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Efecto Reflejo Metalizado (Efecto brillo de izquierda a derecha) */
+.btn-pill::after, .btn-metallic::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: none;
+}
+
+.btn-pill:hover::after, .btn-metallic:hover::after {
+  left: 160%;
+  transition: all 0.55s ease-in-out;
+}
+
+.btn-pill:hover, .btn-metallic:hover {
+  background-color: #3a3a48;
+  color: #ffffff;
+  border-color: var(--accent-hover);
+}
+
+.btn-pill:active, .btn-metallic:active {
+  background-color: var(--accent-click);
+  color: #d0d0d0;
+}
+
+/* Iconos */
+.btn-icon {
+  font-size: 1.1em;
+  transition: color 0.2s ease;
+}
+
+.btn-pill:hover .btn-icon {
+  color: var(--accent-hover);
+}
+
+.btn-pill:active .btn-icon {
+  color: var(--accent-click);
+}
+
+/* Layout 3 Columnas de la App */
 .main-container {
   display: flex;
-  gap: 15px;
-  flex-direction: column; /* Apila las 3 columnas principales en celular */
+  gap: 20px;
+  flex-direction: column;
+  margin-top: 20px;
 }
 
 .columna-catalogo, .columna-panel, .columna-setlist {
@@ -36,27 +197,23 @@
 
 .controles-cancion {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
-  background-color: rgba(0,0,0,0.2);
-  padding: 6px;
+  background-color: rgba(0,0,0,0.25);
+  padding: 6px 10px;
   border-radius: 4px;
   font-size: 0.75em;
   flex-wrap: wrap;
 }
 
-/* Adaptación para Pantallas Grandes (PC / Tablet Horizontal) */
+/* Adaptación para PC / Tablets Horizontales */
 @media (min-width: 992px) {
-  .header-inputs {
-    flex-direction: column;
-  }
-
-  .header-row {
+  .band-show-container {
     flex-direction: row;
   }
 
   .main-container {
-    flex-direction: row; /* Restaura 3 columnas una al lado de la otra */
+    flex-direction: row;
   }
 
   .columna-catalogo, .columna-panel {
@@ -65,12 +222,12 @@
   }
 
   .columna-setlist {
-    flex: 2; /* Ocupa el doble de ancho en el centro */
+    flex: 2;
     width: auto;
   }
 
   .scroll-area {
-    max-height: 75vh;
+    max-height: 72vh;
     overflow-y: auto;
   }
 }
