@@ -15,6 +15,19 @@ const formatearTiempoTotal = (segundosTotales) => {
   return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
 };
 
+// Función para limpiar de manera inteligente la información innecesaria de la versión
+const limpiarTituloCancion = (nombreOriginal) => {
+  if (!nombreOriginal) return '';
+  
+  // Expresión regular que busca paréntesiss o corchetes que contengan términos típicos de versión/remaster
+  const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster|remastered|version|edit|mix|live|deluxe|bonus|track|anniversary|single|mono|stereo|digital|take|demo|edition)\b.*?[\)\]\}]/gi;
+  
+  let tituloLimpio = nombreOriginal.replace(patronInnecesario, '');
+  
+  // Elimina espacios dobles o sobrantes al final o principio
+  return tituloLimpio.replace(/\s+/g, ' ').trim();
+};
+
 function App() {
   // Buscador e integración API iTunes
   const [busqueda, setBusqueda] = useState('');
@@ -137,10 +150,12 @@ function App() {
 
   const agregarAlSetlist = (cancion) => {
     const duracionSegundos = Math.round((cancion.trackTimeMillis || 0) / 1000);
+    const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+
     const nuevaEjecucion = {
       idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
       id: cancion.trackId,
-      nombre: cancion.trackName,
+      nombre: tituloLimpio,
       disco: cancion.collectionName || 'Sin Álbum',
       artista: cancion.artistName,
       track: cancion.trackNumber,
@@ -481,7 +496,7 @@ function App() {
       
       <main className="main-container">
         
-        {/* BUSCADOR DE CANCIONES (FIX DE ANCHO) */}
+        {/* BUSCADOR DE CANCIONES */}
         <section className="columna-catalogo" style={{ backgroundColor: '#2a2a2a', padding: '10px', borderRadius: '8px', minWidth: 0, boxSizing: 'border-box' }}>
           <h2 style={{ fontSize: '1.2em', marginTop: '5px' }}>Buscador de Canciones</h2>
           
@@ -511,7 +526,7 @@ function App() {
               <div style={{ textAlign: 'center', color: '#888', padding: '15px 5px', fontSize: '0.85em' }}>
                 <p style={{ marginBottom: '10px' }}>Busca por artista o tema para armar tu setlist.</p>
                 <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Soda Stereo', 'Queen', 'Metallica', 'Ghost', 'Coldplay'].map((term) => (
+                  {['Soda Stereo', 'Queen', 'Whitesnake', 'Journey', 'Metallica'].map((term) => (
                     <button
                       key={term}
                       onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
@@ -540,25 +555,28 @@ function App() {
                     </div>
                   </summary>
                   <div style={{ padding: '0 6px 6px 6px' }}>
-                    {disco.canciones.map((cancion) => (
-                      <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '6px 8px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
-                        <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
-                          <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
-                            {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{cancion.trackName}
-                          </strong>
-                          <small style={{ color: '#aaa', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
-                            {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
-                          </small>
+                    {disco.canciones.map((cancion) => {
+                      const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+                      return (
+                        <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#444', marginBottom: '4px', padding: '6px 8px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
+                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
+                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
+                              {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
+                            </strong>
+                            <small style={{ color: '#aaa', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
+                              {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
+                            </small>
+                          </div>
+                          <button 
+                            onClick={() => agregarAlSetlist(cancion)}
+                            title="Agregar al setlist"
+                            style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '1em', flexShrink: 0 }}
+                          >
+                            +
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => agregarAlSetlist(cancion)}
-                          title="Agregar al setlist"
-                          style={{ backgroundColor: '#4CAF50', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '1em', flexShrink: 0 }}
-                        >
-                          +
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </details>
               ))
@@ -624,14 +642,34 @@ function App() {
                     </div>
                   ) : (
                     <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '150px' }}>
-                          <span style={{ color: '#888', cursor: 'grab', fontSize: '1em', paddingRight: '5px' }}>☰</span>
-                          <strong style={{ fontSize: '1em' }}>
-                            {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)} 
-                            {item.esEspecial ? `🎭 ${item.nombre}` : item.nombre}
-                          </strong>
-                        </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '200px' }}>
+                          <span style={{ color: '#888', cursor: 'grab', fontSize: '1em' }}>☰</span>
+                          <span style={{ fontWeight: 'bold', fontSize: '1em' }}>
+                            {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)}
+                            {item.esEspecial && '🎭 '}
+                          </span>
+                          {/* NOMBRE DE LA CANCIÓN EDITABLE EN EL SETLIST */}
+                          <input 
+                            type="text" 
+                            value={item.nombre} 
+                            onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
+                            style={{ 
+                              flex: 1, 
+                              fontWeight: 'bold', 
+                              fontSize: '1em', 
+                              backgroundColor: 'transparent', 
+                              border: 'none', 
+                              color: '#fff', 
+                              borderBottom: '1px solid transparent',
+                              padding: '2px 4px',
+                              borderRadius: '3px'
+                            }}
+                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #4da6ff'}
+                            onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
+                            title="Haz clic para editar el nombre"
+                          />
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <span style={{ fontSize: '0.85em' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
                           <button 
