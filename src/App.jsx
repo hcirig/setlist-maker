@@ -255,7 +255,6 @@ function App() {
       
       const esUltimo = index === setlist.length - 1;
       
-      // Lógica de Gap: Las filas especiales NUNCA suman gap
       if (!esUltimo && !item.enganchada && !item.esEspecial) {
         totalSegundos += Number(gap);
       }
@@ -282,6 +281,7 @@ function App() {
     const logoHeight = 20; 
     let textStartX = 10;
 
+    // Cálculo dinámico del desplazamiento según Logo o Nombre
     if (logoUrl) {
       if (logoDimensions.height > 0) {
         const ratio = logoDimensions.width / logoDimensions.height;
@@ -291,6 +291,11 @@ function App() {
         logoWidth = 30;
       }
       textStartX = 10 + logoWidth + 5;
+    } else if (nombreBanda.trim()) {
+      // Estimación de ancho del texto para desplazar los datos del show a la derecha
+      const textoBanda = nombreBanda.trim().toUpperCase();
+      const anchoEstimado = Math.min(80, Math.max(35, textoBanda.length * 4.2));
+      textStartX = 10 + anchoEstimado + 5;
     }
 
     const opciones = {
@@ -339,8 +344,9 @@ function App() {
               console.warn("No se pudo insertar el logo en el PDF", e);
             }
           } else if (nombreBanda.trim()) {
+            // Nombre en Negrita y Cursiva
             pdf.setFontSize(18);
-            pdf.setFont("helvetica", "bold");
+            pdf.setFont("helvetica", "bolditalic");
             pdf.text(nombreBanda.trim().toUpperCase(), 10, 20);
           }
 
