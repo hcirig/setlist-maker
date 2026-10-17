@@ -118,8 +118,9 @@ function App() {
     setLogoDimensions({ width: 0, height: 0 });
   };
 
-  const agruparPorDisco = () => {
+const agruparPorDisco = () => {
     const agrupado = {};
+
     resultados.forEach((track) => {
       const discoNombre = track.collectionName || 'Sencillos / Varios';
       if (!agrupado[discoNombre]) {
@@ -135,10 +136,29 @@ function App() {
       agrupado[discoNombre].canciones.push(track);
     });
 
+    // 1. Ordenar las canciones DENTRO de cada álbum por número de pista (Track 1, 2, 3...)
+    Object.values(agrupado).forEach((disco) => {
+      disco.canciones.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
+    });
+
+    // 2. Ordenar los ÁLBUMES por relevancia y año
     return Object.values(agrupado).sort((a, b) => {
+      // "Sencillos / Varios" siempre al final
+      if (a.nombreDisco === 'Sencillos / Varios') return 1;
+      if (b.nombreDisco === 'Sencillos / Varios') return -1;
+
+      // Priorizar discos cuyo artista coincida con la búsqueda actual
+      const terminoLimpio = busqueda.toLowerCase().trim();
+      const aEsArtistaPrincipal = a.artista.toLowerCase().includes(terminoLimpio);
+      const bEsArtistaPrincipal = b.artista.toLowerCase().includes(terminoLimpio);
+
+      if (aEsArtistaPrincipal && !bEsArtistaPrincipal) return -1;
+      if (!aEsArtistaPrincipal && bEsArtistaPrincipal) return 1;
+
+      // Si ambos coinciden, ordenar por año (más reciente primero: b.anio - a.anio)
       if (a.anio === null) return 1;
       if (b.anio === null) return -1;
-      return a.anio - b.anio;
+      return b.anio - a.anio; // Cambiar a "a.anio - b.anio" si prefieres más viejos primero
     });
   };
 
