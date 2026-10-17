@@ -1,8 +1,9 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES V3.1
+   ESTILOS GENERALES Y TEMAS (SETLIST CREATOR)
    ========================================= */
 
 :root {
+  /* Tema Oscuro por Defecto */
   --bg-dark: #121212;
   --panel-bg: #1e1e24;
   --input-bg: #2a2a32;
@@ -10,11 +11,50 @@
   --text-main: #e0e0e0;
   --text-muted: #9e9ea8;
   
+  --border-color: #2d2d38;
+  --border-light: #333342;
+  --card-bg: #262630;
+  --card-alt-bg: #1e1e26;
+  --nav-bg: #16161c;
+  --nav-btn-bg: #22222a;
+  --nav-btn-border: #333340;
+  --controles-bg: rgba(0, 0, 0, 0.25);
+  --clock-bg: #141418;
+
+  --free-text-bg: #2e2e38;
+  --special-bg: #1e2b3d;
+  --extra-song-bg: #331e3d;
+
+  /* Botones de colores fijos */
   --btn-blue: #008dfe;
   --btn-violet: #9030fd;
   --btn-violet-dark: #6e1ed3;
   --btn-danger: #f44336;
   --btn-danger-dark: #d32f2f;
+}
+
+/* Tema Claro */
+[data-theme="light"] {
+  --bg-dark: #f0f2f5;
+  --panel-bg: #ffffff;
+  --input-bg: #f8f9fc;
+  --input-border: #cccccc;
+  --text-main: #181820;
+  --text-muted: #626270;
+  
+  --border-color: #dcdce6;
+  --border-light: #e4e4ee;
+  --card-bg: #f0f2f7;
+  --card-alt-bg: #f8f9fc;
+  --nav-bg: #ffffff;
+  --nav-btn-bg: #e8eaef;
+  --nav-btn-border: #cccccc;
+  --controles-bg: rgba(0, 0, 0, 0.06);
+  --clock-bg: #e8eaef;
+
+  --free-text-bg: #e2e4ea;
+  --special-bg: #e1effe;
+  --extra-song-bg: #f4e6fa;
 }
 
 body {
@@ -24,18 +64,51 @@ body {
   margin: 0;
   padding: 0;
   scroll-behavior: smooth;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Header Centrado */
 .app-header {
-  border-bottom: 1px solid #2d2d35;
+  border-bottom: 1px solid var(--border-color);
   padding: 15px;
   margin-bottom: 10px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+}
+
+.header-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.btn-header-action {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 9999px;
+  border: 1px solid var(--nav-btn-border);
+  background-color: var(--nav-btn-bg);
+  color: var(--text-main);
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn-header-action:hover {
+  border-color: var(--btn-blue);
+  color: var(--btn-blue);
+  transform: translateY(-1px);
 }
 
 .app-header img {
@@ -52,7 +125,7 @@ body {
   display: block;
 }
 
-/* NAVBAR MOBILE: Botones Redondos con Iconos, Ancho Fijo 360px, Sticky */
+/* NAVBAR MOBILE */
 .mobile-nav-container {
   position: sticky;
   top: 0;
@@ -70,12 +143,12 @@ body {
   align-items: center;
   width: 360px;
   max-width: 360px;
-  background-color: #16161c;
-  border: 1px solid #2d2d38;
-  border-radius: 9999px; /* Forma de píldora contenedora */
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
   padding: 6px 10px;
   box-sizing: border-box;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .mobile-nav-link {
@@ -84,9 +157,9 @@ body {
   font-size: 1.1em;
   width: 42px;
   height: 42px;
-  border-radius: 50%; /* Botones completamente redondos */
-  background-color: #22222a;
-  border: 1px solid #333340;
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-light);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -102,7 +175,6 @@ body {
   box-shadow: 0 0 10px rgba(0, 141, 254, 0.5);
 }
 
-/* Ocultar la barra en pantallas de Escritorio */
 @media (min-width: 992px) {
   .mobile-nav-container {
     display: none;
@@ -117,7 +189,7 @@ body {
   background-color: var(--panel-bg);
   padding: 20px;
   border-radius: 12px;
-  border: 1px solid #2d2d38;
+  border: 1px solid var(--border-color);
   box-sizing: border-box;
   margin-top: 10px;
   scroll-margin-top: 65px;
@@ -139,7 +211,7 @@ body {
   color: var(--text-main);
   text-transform: uppercase;
   letter-spacing: 1px;
-  border-bottom: 1px solid #333340;
+  border-bottom: 1px solid var(--border-light);
   padding-bottom: 6px;
 }
 
@@ -173,11 +245,76 @@ body {
 
 .custom-input:focus {
   border-color: var(--btn-blue);
-  background-color: #32323d;
 }
 
-input[type="date"].custom-input {
+[data-theme="dark"] input[type="date"].custom-input {
   color-scheme: dark;
+}
+
+[data-theme="light"] input[type="date"].custom-input {
+  color-scheme: light;
+}
+
+/* Tarjetas y Subpaneles */
+.panel-subcard {
+  background-color: var(--card-bg);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  border: 1px solid var(--border-light);
+}
+
+.clock-box {
+  background-color: var(--clock-bg);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+  border: 1px solid var(--border-color);
+}
+
+.disco-details {
+  margin-bottom: 8px;
+  background-color: var(--card-bg);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  max-width: 100%;
+}
+
+.disco-summary {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-weight: bold;
+  outline: none;
+  font-size: 0.85em;
+  text-align: left;
+  min-width: 0;
+  color: var(--text-main);
+}
+
+.disco-artist-sub {
+  color: var(--text-muted);
+  font-weight: normal;
+  font-size: 0.8em;
+  display: block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.cancion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-alt-bg);
+  margin-bottom: 4px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  gap: 6px;
+  min-width: 0;
 }
 
 /* Botones Estándar */
@@ -318,11 +455,13 @@ input[type="date"].custom-input {
   width: 100%;
   box-sizing: border-box;
   scroll-margin-top: 65px;
+  min-width: 0;
 }
 
 .scroll-area {
   max-height: none; 
   overflow-y: visible;
+  overflow-x: hidden;
   padding-right: 5px;
 }
 
@@ -330,13 +469,14 @@ input[type="date"].custom-input {
   display: flex;
   gap: 10px;
   align-items: center;
-  background-color: rgba(0,0,0,0.25);
+  background-color: var(--controles-bg);
   padding: 6px 10px;
   border-radius: 4px;
   font-size: 0.75em;
   flex-wrap: wrap;
 }
 
+/* Pantallas de Escritorio (Desktop) */
 @media (min-width: 992px) {
   .band-show-container {
     flex-direction: row;
@@ -346,18 +486,24 @@ input[type="date"].custom-input {
     flex-direction: row;
   }
 
+  /* Ancho fijo de máximo 280px para Buscador y Panel de Control */
   .columna-catalogo, .columna-panel {
-    flex: 1;
-    width: auto;
+    flex: 0 0 280px;
+    width: 280px;
+    max-width: 280px;
+    min-width: 0;
   }
 
+  /* El Setlist ocupa todo el espacio central sobrante */
   .columna-setlist {
-    flex: 2;
+    flex: 1;
     width: auto;
+    min-width: 0;
   }
 
   .scroll-area {
     max-height: 72vh;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 }

@@ -2,6 +2,159 @@ import { useState, useRef, useEffect } from 'react'
 import html2pdf from 'html2pdf.js'
 import './App.css'
 
+const translations = {
+  es: {
+    themeDark: 'Oscuro',
+    themeLight: 'Claro',
+    langLabel: 'ES',
+    myBandTitle: 'Mi Banda',
+    bandNameLabel: 'Nombre:',
+    bandNamePlaceholder: 'Ej: Nombre de tu Banda',
+    uploadLogo: 'SUBIR LOGO',
+    socialContactLabel: 'Redes / Contacto:',
+    socialContactPlaceholder: 'Ej: IG: @mi_banda | www.mibanda.com',
+
+    upcomingShowTitle: 'Próximo Show',
+    dateLabel: 'Fecha:',
+    venueLabel: 'Venue (Lugar):',
+    venuePlaceholder: 'Ej: Movistar Arena',
+    cityLabel: 'Ciudad / País:',
+    cityPlaceholder: 'Ej: Buenos Aires, Argentina',
+
+    searchTitle: 'Buscador',
+    searchPlaceholder: 'Artista, canción...',
+    clearSearch: 'Limpiar buscador',
+    searchSearching: 'Buscando canciones... 🎵',
+    searchError: 'No se pudieron obtener resultados. Revisa tu conexión.',
+    searchEmpty: 'Escribe el nombre de un artista o canción arriba para buscar...',
+    singlesVarious: 'Sencillos / Varios',
+
+    setlistTitle: 'Tu Setlist',
+    clearSetlistBtn: 'VACIAR',
+    confirmClear: '⚠️ ¿Estás seguro de que quieres borrar todo el setlist?',
+    setlistEmpty: 'Busca y agrega canciones desde el catálogo para armar tu lista...',
+    tapeTooltip: 'Pista / Tape',
+    segueTooltip: 'Enganchada al siguiente track',
+    durationLabel: 'Duración:',
+    addLabel: 'Sumar:',
+    secLabel: 'seg',
+    minLabel: 'min',
+    notesPlaceholder: 'Notas...',
+    removeTooltip: 'Quitar',
+    editNameTooltip: 'Haz clic para editar el nombre',
+
+    controlPanelTitle: 'Panel de Control',
+    gapLabel: 'Pausa entre temas:',
+    specialRowTitle: 'Fila Especial',
+    typeLabel: 'Tipo:',
+    speechOption: 'Speech',
+    intermissionOption: 'Intervalo',
+    encoreOption: 'Encore',
+    freeTextOption: 'Texto Libre (Separador)',
+    customSongOption: 'Canción (Fuera de catálogo)',
+    textToShowLabel: 'Texto a mostrar:',
+    textToShowPlaceholder: 'Ej: SET 1',
+    songTitleLabel: 'Nombre de la canción:',
+    songTitlePlaceholder: 'Ej: Song Title',
+    durationMmSsLabel: 'Duración (mm:ss):',
+    addSpecialRowBtn: '+ FILA',
+    totalEstimatedTime: 'Tiempo Total Estimado',
+    exportBtn: 'EXPORTAR',
+
+    lineSpacing: 'Interlineado:',
+    fontSize: 'Fuente:',
+    downloadBtn: 'DESCARGAR',
+    closeBtn: '✕ CERRAR',
+    generatingPreview: 'Generando vista previa... ⏳',
+    pdfMobileNotice: '* Si la hoja no se muestra correctamente en tu celular, ',
+    pdfMobileNoticeLink: 'tocá acá para verla en otra pestaña',
+
+    navMyBand: 'Mi Banda',
+    navUpcomingShow: 'Próximo Show',
+    navSearch: 'Buscador',
+    navSetlist: 'Setlist',
+    navPanel: 'Panel de Control',
+
+    defaultSetText: 'SET 1',
+    untitledSong: 'Canción sin título'
+  },
+  en: {
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    langLabel: 'EN',
+    myBandTitle: 'My Band',
+    bandNameLabel: 'Name:',
+    bandNamePlaceholder: 'e.g. Your Band Name',
+    uploadLogo: 'UPLOAD LOGO',
+    socialContactLabel: 'Socials / Contact:',
+    socialContactPlaceholder: 'e.g. IG: @my_band | www.myband.com',
+
+    upcomingShowTitle: 'Upcoming Show',
+    dateLabel: 'Date:',
+    venueLabel: 'Venue:',
+    venuePlaceholder: 'e.g. Madison Square Garden',
+    cityLabel: 'City / Country:',
+    cityPlaceholder: 'e.g. London, UK',
+
+    searchTitle: 'Search',
+    searchPlaceholder: 'Artist, song...',
+    clearSearch: 'Clear search',
+    searchSearching: 'Searching songs... 🎵',
+    searchError: 'Could not fetch results. Check your connection.',
+    searchEmpty: 'Type an artist or song name above to search...',
+    singlesVarious: 'Singles / Various',
+
+    setlistTitle: 'Your Setlist',
+    clearSetlistBtn: 'CLEAR',
+    confirmClear: '⚠️ Are you sure you want to clear the entire setlist?',
+    setlistEmpty: 'Search and add songs from the catalog to build your list...',
+    tapeTooltip: 'Backing Track / Tape',
+    segueTooltip: 'Segue to next track',
+    durationLabel: 'Duration:',
+    addLabel: 'Add:',
+    secLabel: 'sec',
+    minLabel: 'min',
+    notesPlaceholder: 'Notes...',
+    removeTooltip: 'Remove',
+    editNameTooltip: 'Click to edit name',
+
+    controlPanelTitle: 'Control Panel',
+    gapLabel: 'Pause between songs:',
+    specialRowTitle: 'Special Row',
+    typeLabel: 'Type:',
+    speechOption: 'Speech',
+    intermissionOption: 'Intermission',
+    encoreOption: 'Encore',
+    freeTextOption: 'Free Text (Divider)',
+    customSongOption: 'Song (Custom)',
+    textToShowLabel: 'Text to show:',
+    textToShowPlaceholder: 'e.g. SET 1',
+    songTitleLabel: 'Song title:',
+    songTitlePlaceholder: 'e.g. Song Title',
+    durationMmSsLabel: 'Duration (mm:ss):',
+    addSpecialRowBtn: '+ ROW',
+    totalEstimatedTime: 'Estimated Total Time',
+    exportBtn: 'EXPORT',
+
+    lineSpacing: 'Line Spacing:',
+    fontSize: 'Font Size:',
+    downloadBtn: 'DOWNLOAD',
+    closeBtn: '✕ CLOSE',
+    generatingPreview: 'Generating preview... ⏳',
+    pdfMobileNotice: "* If the document doesn't display properly on mobile, ",
+    pdfMobileNoticeLink: 'click here to open in another tab',
+
+    navMyBand: 'My Band',
+    navUpcomingShow: 'Upcoming Show',
+    navSearch: 'Search',
+    navSetlist: 'Setlist',
+    navPanel: 'Control Panel',
+
+    defaultSetText: 'SET 1',
+    untitledSong: 'Untitled Song'
+  }
+};
+
 const formatearTiempo = (segundosTotales) => {
   const minutos = Math.floor(segundosTotales / 60);
   const segundos = segundosTotales % 60;
@@ -15,7 +168,6 @@ const formatearTiempoTotal = (segundosTotales) => {
   return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
 };
 
-// Limpieza de títulos (remaster, live, etc.)
 const limpiarTituloCancion = (nombreOriginal) => {
   if (!nombreOriginal) return '';
   const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster|remastered|version|edit|mix|live|deluxe|bonus|track|anniversary|single|mono|stereo|digital|take|demo|edition)\b.*?[\)\]\}]/gi;
@@ -24,7 +176,10 @@ const limpiarTituloCancion = (nombreOriginal) => {
 };
 
 function App() {
-  const [terminoBuscado, setTerminoBuscado] = useState('');
+  const [tema, setTema] = useState('dark');
+  const [idioma, setIdioma] = useState('es');
+  const t = translations[idioma];
+
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
@@ -45,7 +200,6 @@ function App() {
   const [nombreCancionExtra, setNombreCancionExtra] = useState("");
   const [duracionCancionExtra, setDuracionCancionExtra] = useState("03:30");
 
-  // Datos del Show y Banda
   const [nombreBanda, setNombreBanda] = useState("");
   const [fecha, setFecha] = useState("");
   const [venue, setVenue] = useState("");
@@ -58,6 +212,10 @@ function App() {
   const dragOverItem = useRef();
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', tema);
+  }, [tema]);
+
+  useEffect(() => {
     let timeoutId;
     if (mostrarPreview) {
       setCargandoPdf(true);
@@ -66,23 +224,29 @@ function App() {
       }, 600);
     }
     return () => clearTimeout(timeoutId);
-  }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf]);
+  }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf, idioma]);
 
-const ejecutarBusqueda = async (termino) => {
+  const toggleTheme = () => {
+    setTema(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const toggleIdioma = () => {
+    setIdioma(prev => prev === 'es' ? 'en' : 'es');
+  };
+
+  const ejecutarBusqueda = async (termino) => {
     const query = termino || busqueda;
     if (!query.trim()) return;
 
     setCargandoBusqueda(true);
     setErrorBusqueda(null);
-    setTerminoBuscado(query); // Guardamos la consulta exacta efectuada
     try {
-      // Ampliamos a 200 resultados para obtener discos completos
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=200`);
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=50`);
       if (!res.ok) throw new Error('Error al conectar con el servidor de música.');
       const data = await res.json();
       setResultados(data.results || []);
     } catch (err) {
-      setErrorBusqueda('No se pudieron obtener resultados. Revisa tu conexión.');
+      setErrorBusqueda(t.searchError);
     } finally {
       setCargandoBusqueda(false);
     }
@@ -121,11 +285,10 @@ const ejecutarBusqueda = async (termino) => {
     setLogoDimensions({ width: 0, height: 0 });
   };
 
-const agruparPorDisco = () => {
+  const agruparPorDisco = () => {
     const agrupado = {};
-
     resultados.forEach((track) => {
-      const discoNombre = track.collectionName || 'Sencillos / Varios';
+      const discoNombre = track.collectionName || t.singlesVarious;
       if (!agrupado[discoNombre]) {
         const releaseYear = track.releaseDate ? new Date(track.releaseDate).getFullYear() : null;
         agrupado[discoNombre] = {
@@ -139,37 +302,10 @@ const agruparPorDisco = () => {
       agrupado[discoNombre].canciones.push(track);
     });
 
-    // 1. Ordenar canciones internamente por número de pista (Track 1, 2, 3...)
-    Object.values(agrupado).forEach((disco) => {
-      disco.canciones.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
-    });
-
-    // 2. Ordenar discos según relevancia con respecto a lo buscado
-    const queryLimpia = terminoBuscado.toLowerCase().trim();
-
     return Object.values(agrupado).sort((a, b) => {
-      if (a.nombreDisco === 'Sencillos / Varios') return 1;
-      if (b.nombreDisco === 'Sencillos / Varios') return -1;
-
-      // Evaluar coincidencia en Artista y/o en Nombre del Disco
-      const aCoincideArtista = a.artista.toLowerCase().includes(queryLimpia) || queryLimpia.includes(a.artista.toLowerCase());
-      const bCoincideArtista = b.artista.toLowerCase().includes(queryLimpia) || queryLimpia.includes(b.artista.toLowerCase());
-
-      const aCoincideDisco = a.nombreDisco.toLowerCase().includes(queryLimpia);
-      const bCoincideDisco = b.nombreDisco.toLowerCase().includes(queryLimpia);
-
-      // Asignar puntaje de relevancia
-      const aPuntaje = (aCoincideArtista ? 2 : 0) + (aCoincideDisco ? 3 : 0);
-      const bPuntaje = (bCoincideArtista ? 2 : 0) + (bCoincideDisco ? 3 : 0);
-
-      if (aPuntaje !== bPuntaje) {
-        return bPuntaje - aPuntaje;
-      }
-
-      // Si empatan en relevancia, ordenar por año más reciente
       if (a.anio === null) return 1;
       if (b.anio === null) return -1;
-      return b.anio - a.anio;
+      return a.anio - b.anio;
     });
   };
 
@@ -205,7 +341,7 @@ const agruparPorDisco = () => {
     if (tipoEspecial === "Texto Libre") {
       nuevoBloque = {
         idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-        nombre: textoLibre,
+        nombre: textoLibre || t.defaultSetText,
         duracionBase: 0,
         esTape: false,
         enganchada: false,
@@ -226,7 +362,7 @@ const agruparPorDisco = () => {
       
       nuevoBloque = {
         idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-        nombre: nombreCancionExtra || "Canción sin título",
+        nombre: nombreCancionExtra || t.untitledSong,
         duracionBase: segs,
         esTape: false,
         enganchada: false,
@@ -240,9 +376,14 @@ const agruparPorDisco = () => {
       setNombreCancionExtra("");
     } else {
       const duracionSegundos = Number(minutosEspecial) * 60;
+      let nombreMostrar = tipoEspecial;
+      if (tipoEspecial === "Speech") nombreMostrar = t.speechOption;
+      if (tipoEspecial === "Intervalo") nombreMostrar = t.intermissionOption;
+      if (tipoEspecial === "Encore") nombreMostrar = t.encoreOption;
+
       nuevoBloque = {
         idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-        nombre: tipoEspecial,
+        nombre: nombreMostrar,
         duracionBase: duracionSegundos,
         esTape: false,
         enganchada: false,
@@ -268,7 +409,7 @@ const agruparPorDisco = () => {
   };
 
   const vaciarSetlist = () => {
-    if (window.confirm("⚠️ ¿Estás seguro de que quieres borrar todo el setlist?")) {
+    if (window.confirm(t.confirmClear)) {
       setSetlist([]);
     }
   };
@@ -352,16 +493,20 @@ const agruparPorDisco = () => {
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
 
-        let fechaStr = 'Fecha: _____';
+        const labelFecha = idioma === 'en' ? 'Date' : 'Fecha';
+        const labelLugar = idioma === 'en' ? 'Venue' : 'Lugar';
+        const labelCiudad = idioma === 'en' ? 'City' : 'Ciudad';
+
+        let fechaStr = `${labelFecha}: _____`;
         if (fecha) {
           const partes = fecha.split('-'); 
           if (partes.length === 3) {
-            fechaStr = `Fecha: ${partes[2]}/${partes[1]}/${partes[0]}`; 
+            fechaStr = `${labelFecha}: ${partes[2]}/${partes[1]}/${partes[0]}`; 
           }
         }
 
-        const venueStr = venue ? `Lugar: ${venue}` : 'Lugar: _____';
-        const ciudadStr = ciudad ? `Ciudad: ${ciudad}` : 'Ciudad: _____';
+        const venueStr = `${labelLugar}: ${venue ? venue : '_____'}`;
+        const ciudadStr = `${labelCiudad}: ${ciudad ? ciudad : '_____'}`;
 
         for (let i = 1; i <= totalPages; i++) {
           pdf.setPage(i);
@@ -417,10 +562,10 @@ const agruparPorDisco = () => {
   };
 
   const obtenerColorFondo = (item) => {
-    if (item.esTextoLibre) return '#2e2e38';
-    if (item.esEspecial) return '#1e2b3d';
-    if (item.esCancionExtra) return '#331e3d'; 
-    return '#262630';
+    if (item.esTextoLibre) return 'var(--free-text-bg)';
+    if (item.esEspecial) return 'var(--special-bg)';
+    if (item.esCancionExtra) return 'var(--extra-song-bg)'; 
+    return 'var(--card-bg)';
   };
 
   const obtenerColorBorde = (item) => {
@@ -433,18 +578,38 @@ const agruparPorDisco = () => {
   return (
     <div style={{ padding: '20px', minHeight: '100vh', boxSizing: 'border-box' }}>
       
-      {/* HEADER CON IMAGEN CENTRAL */}
+      {/* HEADER CON BOTONES SUPERIORES Y LOGO */}
       <header className="app-header">
+        <div className="header-top-bar">
+          <button 
+            onClick={toggleTheme} 
+            className="btn-header-action" 
+            title={tema === 'dark' ? 'Cambiar a Tema Claro' : 'Switch to Dark Theme'}
+          >
+            <i className={tema === 'dark' ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
+            <span>{tema === 'dark' ? t.themeLight : t.themeDark}</span>
+          </button>
+
+          <button 
+            onClick={toggleIdioma} 
+            className="btn-header-action" 
+            title={idioma === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+          >
+            <i className="fa-solid fa-globe"></i>
+            <span>{idioma === 'es' ? 'EN' : 'ES'}</span>
+          </button>
+        </div>
+
         <img 
           src="/header-logo.png" 
-          alt="Setlist Maker" 
+          alt="Setlist Creator" 
           className="header-banner"
           onError={(e) => {
             e.target.style.display = 'none';
             if (!document.getElementById('fallback-title')) {
               const h1 = document.createElement('h1');
               h1.id = 'fallback-title';
-              h1.innerText = 'SETLIST MAKER';
+              h1.innerText = 'SETLIST CREATOR';
               h1.style.margin = '0';
               h1.style.fontSize = '2em';
               h1.style.letterSpacing = '2px';
@@ -454,41 +619,41 @@ const agruparPorDisco = () => {
         />
       </header>
 
-      {/* NAVBAR MOBILE CON ICONOS EN BOTONES REDONDOS */}
+      {/* NAVBAR MOBILE */}
       <div className="mobile-nav-container">
         <nav className="mobile-nav">
-          <a href="#sec-mi-banda" className="mobile-nav-link" title="Mi Banda">
+          <a href="#sec-mi-banda" className="mobile-nav-link" title={t.navMyBand}>
             <i className="fa-solid fa-people-group"></i>
           </a>
-          <a href="#sec-proximo-show" className="mobile-nav-link" title="Próximo Show">
+          <a href="#sec-proximo-show" className="mobile-nav-link" title={t.navUpcomingShow}>
             <i className="fa-solid fa-calendar-days"></i>
           </a>
-          <a href="#sec-buscador" className="mobile-nav-link" title="Buscador">
+          <a href="#sec-buscador" className="mobile-nav-link" title={t.navSearch}>
             <i className="fa-solid fa-magnifying-glass"></i>
           </a>
-          <a href="#sec-setlist" className="mobile-nav-link" title="Setlist">
+          <a href="#sec-setlist" className="mobile-nav-link" title={t.navSetlist}>
             <i className="fa-solid fa-file-lines"></i>
           </a>
-          <a href="#sec-panel" className="mobile-nav-link" title="Panel de Control">
+          <a href="#sec-panel" className="mobile-nav-link" title={t.navPanel}>
             <i className="fa-solid fa-gear"></i>
           </a>
         </nav>
       </div>
 
-      {/* CONTENEDOR SECCIONES "MI BANDA" Y "PRÓXIMO SHOW" */}
+      {/* MI BANDA Y PRÓXIMO SHOW */}
       <section className="band-show-container">
         
         {/* MI BANDA */}
         <div id="sec-mi-banda" className="section-block">
-          <h2 className="section-title-right">Mi Banda</h2>
+          <h2 className="section-title-right">{t.myBandTitle}</h2>
           
           <div className="field-group">
-            <label className="field-label">Nombre:</label>
+            <label className="field-label">{t.bandNameLabel}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input 
                 type="text" 
                 className="custom-input"
-                placeholder="Ej: Nombre de tu Banda" 
+                placeholder={t.bandNamePlaceholder} 
                 value={nombreBanda} 
                 onChange={(e) => setNombreBanda(e.target.value)}
                 style={{ flex: 1, minWidth: 0 }}
@@ -504,7 +669,7 @@ const agruparPorDisco = () => {
               
               <label htmlFor="logo-upload" className="btn-pill" style={{ flexShrink: 0 }}>
                 <i className="fa-regular fa-image btn-icon"></i>
-                <span>SUBIR LOGO</span>
+                <span>{t.uploadLogo}</span>
               </label>
 
               {logoUrl && (
@@ -516,8 +681,8 @@ const agruparPorDisco = () => {
                   />
                   <button 
                     onClick={quitarLogo}
-                    title="Quitar Logo"
-                    style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em' }}
+                    title={t.removeTooltip}
+                    style={{ backgroundColor: 'var(--btn-danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em' }}
                   >
                     <i className="fa-solid fa-xmark"></i>
                   </button>
@@ -527,11 +692,11 @@ const agruparPorDisco = () => {
           </div>
 
           <div className="field-group">
-            <label className="field-label">Redes / Contacto:</label>
+            <label className="field-label">{t.socialContactLabel}</label>
             <input 
               type="text" 
               className="custom-input"
-              placeholder="Ej: IG: @mi_banda | www.mibanda.com" 
+              placeholder={t.socialContactPlaceholder} 
               value={contactoRedes} 
               onChange={(e) => setContactoRedes(e.target.value)}
             />
@@ -540,10 +705,10 @@ const agruparPorDisco = () => {
 
         {/* PRÓXIMO SHOW */}
         <div id="sec-proximo-show" className="section-block">
-          <h2 className="section-title-right">Próximo Show</h2>
+          <h2 className="section-title-right">{t.upcomingShowTitle}</h2>
           
           <div className="field-group">
-            <label className="field-label">Fecha:</label>
+            <label className="field-label">{t.dateLabel}</label>
             <input 
               type="date" 
               className="custom-input"
@@ -553,22 +718,22 @@ const agruparPorDisco = () => {
           </div>
 
           <div className="field-group">
-            <label className="field-label">Venue (Lugar):</label>
+            <label className="field-label">{t.venueLabel}</label>
             <input 
               type="text" 
               className="custom-input"
-              placeholder="Ej: Movistar Arena" 
+              placeholder={t.venuePlaceholder} 
               value={venue} 
               onChange={(e) => setVenue(e.target.value)}
             />
           </div>
 
           <div className="field-group">
-            <label className="field-label">Ciudad / País:</label>
+            <label className="field-label">{t.cityLabel}</label>
             <input 
               type="text" 
               className="custom-input"
-              placeholder="Ej: Buenos Aires, Argentina" 
+              placeholder={t.cityPlaceholder} 
               value={ciudad} 
               onChange={(e) => setCiudad(e.target.value)}
             />
@@ -581,16 +746,16 @@ const agruparPorDisco = () => {
       <main className="main-container">
         
         {/* BUSCADOR DE CANCIONES */}
-        <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
-          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
-            Buscador
+        <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', boxSizing: 'border-box', overflow: 'hidden' }}>
+          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+            {t.searchTitle}
           </h2>
           
           <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
             <input 
               type="text" 
               className="custom-input"
-              placeholder="Artista, canción..." 
+              placeholder={t.searchPlaceholder} 
               value={busqueda} 
               onChange={(e) => {
                 setBusqueda(e.target.value);
@@ -604,7 +769,7 @@ const agruparPorDisco = () => {
               type="submit" 
               disabled={cargandoBusqueda}
               className="btn-round"
-              title="Buscar"
+              title={t.searchTitle}
             >
               <i className="fa-solid fa-magnifying-glass btn-icon"></i>
             </button>
@@ -615,7 +780,7 @@ const agruparPorDisco = () => {
                 onClick={limpiarBusqueda}
                 className="btn-danger-round"
                 style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
-                title="Limpiar buscador"
+                title={t.clearSearch}
               >
                 ✕
               </button>
@@ -624,17 +789,17 @@ const agruparPorDisco = () => {
 
           <div className="scroll-area">
             {cargandoBusqueda ? (
-              <p style={{ color: '#aaa', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>Buscando canciones... 🎵</p>
+              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>{t.searchSearching}</p>
             ) : errorBusqueda ? (
-              <p style={{ color: '#f44336', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
+              <p style={{ color: 'var(--btn-danger)', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
             ) : resultados.length === 0 ? (
-              <p style={{ color: '#888', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
-                Escribe el nombre de un artista o canción arriba para buscar...
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
+                {t.searchEmpty}
               </p>
             ) : (
               discosAgrupados.map((disco) => (
-                <details key={disco.nombreDisco} open style={{ marginBottom: '8px', backgroundColor: '#262630', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333342' }}>
-                  <summary style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left', minWidth: 0 }}>
+                <details key={disco.nombreDisco} open className="disco-details">
+                  <summary className="disco-summary">
                     <img 
                       src={disco.artwork} 
                       alt={disco.nombreDisco} 
@@ -643,7 +808,7 @@ const agruparPorDisco = () => {
                     />
                     <div style={{ flex: '1', minWidth: 0, overflow: 'hidden' }}>
                       <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>{disco.nombreDisco}</div>
-                      <small style={{ color: '#aaa', fontWeight: 'normal', fontSize: '0.8em', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                      <small className="disco-artist-sub">
                         {disco.artista} {disco.anio ? `• ${disco.anio}` : ''}
                       </small>
                     </div>
@@ -652,19 +817,19 @@ const agruparPorDisco = () => {
                     {disco.canciones.map((cancion) => {
                       const tituloLimpio = limpiarTituloCancion(cancion.trackName);
                       return (
-                        <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e1e26', marginBottom: '4px', padding: '6px 10px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
-                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
-                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
+                        <div key={cancion.trackId} className="cancion-item">
+                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2', color: 'var(--text-main)' }}>
                               {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
                             </strong>
-                            <small style={{ color: '#888', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
+                            <small style={{ color: 'var(--text-muted)', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
                               {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
                             </small>
                           </div>
                           <button 
                             onClick={() => agregarAlSetlist(cancion)}
                             title="Agregar al setlist"
-                            style={{ backgroundColor: '#008dfe', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
+                            style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
                           >
                             <i className="fa-solid fa-plus"></i>
                           </button>
@@ -679,10 +844,10 @@ const agruparPorDisco = () => {
         </section>
 
         {/* SETLIST PRINCIPAL */}
-        <section id="sec-setlist" className="columna-setlist" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
+        <section id="sec-setlist" className="columna-setlist" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
             <h2 style={{ margin: '0', fontSize: '1.1em', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)' }}>
-              Tu Setlist
+              {t.setlistTitle}
             </h2>
             {setlistRenderizado.length > 0 && (
               <button 
@@ -691,13 +856,13 @@ const agruparPorDisco = () => {
                 style={{ height: '32px', padding: '0 12px', fontSize: '0.75em' }}
               >
                 <i className="fa-regular fa-trash-can"></i>
-                <span>VACIAR</span>
+                <span>{t.clearSetlistBtn}</span>
               </button>
             )}
           </div>
           
           {setlistRenderizado.length === 0 ? (
-            <p style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9em' }}>Busca y agrega canciones desde el catálogo para armar tu lista...</p>
+            <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9em' }}>{t.setlistEmpty}</p>
           ) : (
             <div className="scroll-area">
               {setlistRenderizado.map((item, index) => (
@@ -724,17 +889,17 @@ const agruparPorDisco = () => {
                   
                   {item.esTextoLibre ? (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <i className="fa-solid fa-grip-lines" style={{ color: '#777', cursor: 'grab', paddingRight: '10px' }}></i>
+                      <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab', paddingRight: '10px' }}></i>
                       <input 
                         type="text" 
                         value={item.nombre} 
                         onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
-                        style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1em', backgroundColor: 'transparent', border: 'none', color: '#fff', borderBottom: '1px dashed #666' }}
+                        style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1em', backgroundColor: 'transparent', border: 'none', color: 'var(--text-main)', borderBottom: '1px dashed var(--text-muted)' }}
                       />
                       <button 
                         onClick={() => eliminarDelSetlist(item.idSetlist)}
                         className="btn-danger-round"
-                        title="Quitar"
+                        title={t.removeTooltip}
                         style={{ marginLeft: '10px' }}
                       >
                         -
@@ -744,8 +909,8 @@ const agruparPorDisco = () => {
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '200px' }}>
-                          <i className="fa-solid fa-grip-lines" style={{ color: '#777', cursor: 'grab' }}></i>
-                          <span style={{ fontWeight: 'bold', fontSize: '1em' }}>
+                          <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab' }}></i>
+                          <span style={{ fontWeight: 'bold', fontSize: '1em', color: 'var(--text-main)' }}>
                             {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)}
                             {item.esEspecial && '🎭 '}
                           </span>
@@ -759,22 +924,22 @@ const agruparPorDisco = () => {
                               fontSize: '1em', 
                               backgroundColor: 'transparent', 
                               border: 'none', 
-                              color: '#fff', 
+                              color: 'var(--text-main)', 
                               borderBottom: '1px solid transparent',
                               padding: '2px 4px',
                               borderRadius: '3px'
                             }}
-                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #008dfe'}
+                            onFocus={(e) => e.target.style.borderBottom = '1px dashed var(--btn-blue)'}
                             onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
-                            title="Haz clic para editar el nombre"
+                            title={t.editNameTooltip}
                           />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85em', color: '#aaa' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
+                          <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
                           <button 
                             onClick={() => eliminarDelSetlist(item.idSetlist)}
                             className="btn-danger-round"
-                            title="Quitar"
+                            title={t.removeTooltip}
                           >
                             -
                           </button>
@@ -783,7 +948,7 @@ const agruparPorDisco = () => {
 
                       <div className="controles-cancion">
                         {!item.esEspecial && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Pista / Tape">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.tapeTooltip}>
                             <input 
                               type="checkbox" 
                               checked={item.esTape} 
@@ -794,46 +959,46 @@ const agruparPorDisco = () => {
                         )}
                         
                         {!item.esEspecial && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Enganchada al siguiente track">
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.segueTooltip}>
                             <input 
                               type="checkbox" 
                               checked={item.enganchada} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
                             />
-                            <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#008dfe' : '#777' }}>{'>'}</strong>
+                            <strong style={{ fontSize: '1.2em', color: item.enganchada ? 'var(--btn-blue)' : 'var(--text-muted)' }}>{'>'}</strong>
                           </label>
                         )}
 
                         {item.esEspecial ? (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            Duración:
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
+                            {t.durationLabel}
                             <input 
                               type="number" 
                               value={item.duracionBase / 60} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'duracionBase', Number(e.target.value) * 60)}
-                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
+                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
                             />
-                            <span>min</span>
+                            <span>{t.minLabel}</span>
                           </label>
                         ) : (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            Sumar:
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
+                            {t.addLabel}
                             <input 
                               type="number" 
                               value={item.tiempoExtra} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'tiempoExtra', e.target.value)}
-                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
+                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
                             />
-                            <span>seg</span>
+                            <span>{t.secLabel}</span>
                           </label>
                         )}
 
                         <input 
                           type="text" 
-                          placeholder="Notas..." 
+                          placeholder={t.notesPlaceholder} 
                           value={item.notas} 
                           onChange={(e) => actualizarItemSetlist(item.idSetlist, 'notas', e.target.value)}
-                          style={{ flex: '1', minWidth: '100px', padding: '4px 8px', borderRadius: '3px', border: 'none', fontSize: '1em', backgroundColor: '#1c1c24', color: '#fff' }}
+                          style={{ flex: '1', minWidth: '100px', padding: '4px 8px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
                         />
                       </div>
                     </>
@@ -846,14 +1011,14 @@ const agruparPorDisco = () => {
         </section>
 
         {/* PANEL DE CONTROL */}
-        <section id="sec-panel" className="columna-panel" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
-          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
-            Panel de Control
+        <section id="sec-panel" className="columna-panel" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+            {t.controlPanelTitle}
           </h2>
           
           {/* 1. PAUSA ENTRE TEMAS */}
-          <div className="field-group" style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
-            <label className="field-label">Pausa entre temas:</label>
+          <div className="panel-subcard">
+            <label className="field-label">{t.gapLabel}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input 
                 type="number" 
@@ -862,40 +1027,40 @@ const agruparPorDisco = () => {
                 className="custom-input"
                 style={{ flex: 1, minWidth: 0 }}
               />
-              <span style={{ fontSize: '0.9em', color: '#aaa', fontWeight: 'bold' }}>seg</span>
+              <span style={{ fontSize: '0.9em', color: 'var(--text-muted)', fontWeight: 'bold' }}>{t.secLabel}</span>
             </div>
           </div>
 
           {/* 2. FILA ESPECIAL */}
-          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
+          <div className="panel-subcard">
             <h2 className="section-title-right" style={{ fontSize: '0.95em', margin: '0 0 10px 0' }}>
-              Fila Especial
+              {t.specialRowTitle}
             </h2>
             
             <div className="field-group" style={{ marginBottom: '10px' }}>
-              <label className="field-label">Tipo:</label>
+              <label className="field-label">{t.typeLabel}</label>
               <select 
                 value={tipoEspecial} 
                 onChange={(e) => setTipoEspecial(e.target.value)}
                 className="custom-input"
                 style={{ width: '100%' }}
               >
-                <option value="Speech">Speech</option>
-                <option value="Intervalo">Intervalo</option>
-                <option value="Encore">Encore</option>
-                <option value="Texto Libre">Texto Libre (Separador)</option>
-                <option value="Canción">Canción (Fuera de catálogo)</option>
+                <option value="Speech">{t.speechOption}</option>
+                <option value="Intervalo">{t.intermissionOption}</option>
+                <option value="Encore">{t.encoreOption}</option>
+                <option value="Texto Libre">{t.freeTextOption}</option>
+                <option value="Canción">{t.customSongOption}</option>
               </select>
             </div>
 
             {tipoEspecial === "Texto Libre" ? (
               <div className="field-group" style={{ marginBottom: '12px' }}>
-                <label className="field-label">Texto a mostrar:</label>
+                <label className="field-label">{t.textToShowLabel}</label>
                 <input 
                   type="text" 
                   value={textoLibre} 
                   onChange={(e) => setTextoLibre(e.target.value)}
-                  placeholder="Ej: SET 1"
+                  placeholder={t.textToShowPlaceholder}
                   className="custom-input"
                   style={{ width: '100%', textTransform: 'uppercase' }}
                 />
@@ -903,18 +1068,18 @@ const agruparPorDisco = () => {
             ) : tipoEspecial === "Canción" ? (
               <>
                 <div className="field-group" style={{ marginBottom: '8px' }}>
-                  <label className="field-label">Nombre de la canción:</label>
+                  <label className="field-label">{t.songTitleLabel}</label>
                   <input 
                     type="text" 
                     value={nombreCancionExtra} 
                     onChange={(e) => setNombreCancionExtra(e.target.value)}
-                    placeholder="Ej: Song Title"
+                    placeholder={t.songTitlePlaceholder}
                     className="custom-input"
                     style={{ width: '100%' }}
                   />
                 </div>
                 <div className="field-group" style={{ marginBottom: '12px' }}>
-                  <label className="field-label">Duración (mm:ss):</label>
+                  <label className="field-label">{t.durationMmSsLabel}</label>
                   <input 
                     type="text" 
                     value={duracionCancionExtra} 
@@ -927,7 +1092,7 @@ const agruparPorDisco = () => {
               </>
             ) : (
               <div className="field-group" style={{ marginBottom: '12px' }}>
-                <label className="field-label">Duración:</label>
+                <label className="field-label">{t.durationLabel}</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 
                     type="number" 
@@ -936,7 +1101,7 @@ const agruparPorDisco = () => {
                     className="custom-input"
                     style={{ flex: 1, minWidth: 0 }}
                   />
-                  <span style={{ fontSize: '0.9em', color: '#aaa', fontWeight: 'bold' }}>min</span>
+                  <span style={{ fontSize: '0.9em', color: 'var(--text-muted)', fontWeight: 'bold' }}>{t.minLabel}</span>
                 </div>
               </div>
             )}
@@ -947,14 +1112,14 @@ const agruparPorDisco = () => {
               style={{ width: '100%', justifyContent: 'center' }}
             >
               <i className="fa-solid fa-plus btn-icon"></i>
-              <span>+ FILA</span>
+              <span>{t.addSpecialRowBtn}</span>
             </button>
           </div>
 
           {/* 3. RELOJ / TIEMPO TOTAL ESTIMADO */}
-          <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#888', fontSize: '0.85em', textTransform: 'uppercase' }}>Tiempo Total Estimado</h3>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#008dfe' }}>
+          <div className="clock-box">
+            <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.85em', textTransform: 'uppercase' }}>{t.totalEstimatedTime}</h3>
+            <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--btn-blue)' }}>
               {formatearTiempoTotal(tiempoTotalShow)}
             </div>
           </div>
@@ -967,7 +1132,7 @@ const agruparPorDisco = () => {
             style={{ width: '100%', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.95em', justifyContent: 'center' }}
           >
             <i className="fa-regular fa-file-pdf btn-icon"></i>
-            <span>EXPORTAR</span>
+            <span>{t.exportBtn}</span>
           </button>
 
         </section>
@@ -978,20 +1143,20 @@ const agruparPorDisco = () => {
       {mostrarPreview && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
           
-          <div style={{ backgroundColor: '#1e1e24', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '900px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid #3f3f4e' }}>
+          <div style={{ backgroundColor: 'var(--panel-bg)', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '900px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid var(--input-border)', color: 'var(--text-main)' }}>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid #333340', paddingBottom: '15px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '15px', flexWrap: 'wrap' }}>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Interlineado:</span>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t.lineSpacing}</span>
                   <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round">-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
                   <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round">+</button>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #333340' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Fuente:</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid var(--border-light)' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t.fontSize}</span>
                   <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round">-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
                   <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round">+</button>
@@ -1004,14 +1169,14 @@ const agruparPorDisco = () => {
                   className="btn-pill"
                 >
                   <i className="fa-solid fa-download"></i>
-                  <span>DESCARGAR</span>
+                  <span>{t.downloadBtn}</span>
                 </button>
                 
                 <button 
                   onClick={() => setMostrarPreview(false)}
                   className="btn-danger-pill"
                 >
-                  ✕ CERRAR
+                  {t.closeBtn}
                 </button>
               </div>
             </div>
@@ -1019,7 +1184,7 @@ const agruparPorDisco = () => {
             <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
               {cargandoPdf && (
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontSize: '1.2em', fontWeight: 'bold', zIndex: 10 }}>
-                  Generando vista previa... ⏳
+                  {t.generatingPreview}
                 </div>
               )}
               
@@ -1032,8 +1197,8 @@ const agruparPorDisco = () => {
               )}
             </div>
 
-            <div style={{ textAlign: 'center', fontSize: '0.8em', color: '#aaa' }}>
-              * Si la hoja no se muestra correctamente en tu celular, <a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: '#008dfe', textDecoration: 'underline'}}>tocá acá para verla en otra pestaña</a>.
+            <div style={{ textAlign: 'center', fontSize: '0.8em', color: 'var(--text-muted)' }}>
+              {t.pdfMobileNotice}<a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: 'var(--btn-blue)', textDecoration: 'underline'}}>{t.pdfMobileNoticeLink}</a>.
             </div>
 
           </div>
