@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES V2.6
+   ESTILOS GENERALES Y PALETA DE COLORES V2.7
    ========================================= */
 
 :root {
@@ -132,7 +132,7 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Redondo (Height 40px, Width 40px) */
+/* Botón Redondo Blue (Height 40px, Width 40px) */
 .btn-round {
   width: 40px;
   height: 40px;
@@ -153,7 +153,7 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Peligro / Cerrar Redondeado */
+/* Botón Peligro / Cerrar Píldora */
 .btn-danger-pill {
   height: 40px;
   padding: 0 18px;
@@ -174,8 +174,30 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Animación Reflejo Metalizado para todos los botones */
-.btn-pill::after, .btn-round::after, .btn-danger-pill::after {
+/* Botón Peligro / Quitar Redondo (30px para las filas) */
+.btn-danger-round {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--btn-danger);
+  background-color: var(--btn-danger);
+  color: #ffffff;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  line-height: 1;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Animación Reflejo Metalizado */
+.btn-pill::after, .btn-round::after, .btn-danger-pill::after, .btn-danger-round::after {
   content: '';
   position: absolute;
   top: 0;
@@ -192,7 +214,7 @@ input[type="date"].custom-input {
   transition: none;
 }
 
-.btn-pill:hover::after, .btn-round:hover::after, .btn-danger-pill:hover::after {
+.btn-pill:hover::after, .btn-round:hover::after, .btn-danger-pill:hover::after, .btn-danger-round:hover::after {
   left: 160%;
   transition: all 0.55s ease-in-out;
 }
@@ -204,7 +226,7 @@ input[type="date"].custom-input {
   color: #ffffff;
 }
 
-.btn-danger-pill:hover {
+.btn-danger-pill:hover, .btn-danger-round:hover {
   background-color: #ff5252;
   border-color: #ff5252;
   box-shadow: 0 0 12px rgba(244, 67, 54, 0.4);
@@ -217,7 +239,7 @@ input[type="date"].custom-input {
   box-shadow: none;
 }
 
-.btn-danger-pill:active {
+.btn-danger-pill:active, .btn-danger-round:active {
   background-color: var(--btn-danger-dark);
   border-color: var(--btn-danger-dark);
   box-shadow: none;

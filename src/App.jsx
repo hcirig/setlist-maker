@@ -250,9 +250,13 @@ function App() {
     let totalSegundos = 0;
     setlist.forEach((item, index) => {
       if (item.esTextoLibre) return; 
+      
       totalSegundos += (item.duracionBase + Number(item.tiempoExtra));
+      
       const esUltimo = index === setlist.length - 1;
-      if (!esUltimo && !item.enganchada) {
+      
+      // Lógica de Gap: Las filas especiales NUNCA suman gap
+      if (!esUltimo && !item.enganchada && !item.esEspecial) {
         totalSegundos += Number(gap);
       }
     });
@@ -605,9 +609,11 @@ function App() {
             {setlistRenderizado.length > 0 && (
               <button 
                 onClick={vaciarSetlist}
-                style={{ backgroundColor: 'transparent', color: '#f44336', border: '1px solid #f44336', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em', display: 'flex', alignItems: 'center', gap: '6px' }}
+                className="btn-danger-pill"
+                style={{ height: '32px', padding: '0 12px', fontSize: '0.75em' }}
               >
-                <i className="fa-regular fa-trash-can"></i> Vaciar
+                <i className="fa-regular fa-trash-can"></i>
+                <span>VACIAR</span>
               </button>
             )}
           </div>
@@ -649,9 +655,11 @@ function App() {
                       />
                       <button 
                         onClick={() => eliminarDelSetlist(item.idSetlist)}
-                        style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em', marginLeft: '10px' }}
+                        className="btn-danger-round"
+                        title="Quitar"
+                        style={{ marginLeft: '10px' }}
                       >
-                        Quitar
+                        -
                       </button>
                     </div>
                   ) : (
@@ -687,9 +695,10 @@ function App() {
                           <span style={{ fontSize: '0.85em', color: '#aaa' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
                           <button 
                             onClick={() => eliminarDelSetlist(item.idSetlist)}
-                            style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8em' }}
+                            className="btn-danger-round"
+                            title="Quitar"
                           >
-                            Quitar
+                            -
                           </button>
                         </div>
                       </div>
@@ -706,34 +715,38 @@ function App() {
                           </label>
                         )}
                         
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Enganchada al siguiente track">
-                          <input 
-                            type="checkbox" 
-                            checked={item.enganchada} 
-                            onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
-                          />
-                          <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#008dfe' : '#777' }}>{'>'}</strong>
-                        </label>
+                        {!item.esEspecial && (
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }} title="Enganchada al siguiente track">
+                            <input 
+                              type="checkbox" 
+                              checked={item.enganchada} 
+                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
+                            />
+                            <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#008dfe' : '#777' }}>{'>'}</strong>
+                          </label>
+                        )}
 
                         {item.esEspecial ? (
                           <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            Duración (min):
+                            Duración:
                             <input 
                               type="number" 
                               value={item.duracionBase / 60} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'duracionBase', Number(e.target.value) * 60)}
                               style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
                             />
+                            <span>min</span>
                           </label>
                         ) : (
                           <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            Extra (seg):
+                            Sumar:
                             <input 
                               type="number" 
                               value={item.tiempoExtra} 
                               onChange={(e) => actualizarItemSetlist(item.idSetlist, 'tiempoExtra', e.target.value)}
                               style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: 'none', fontSize: '1em' }}
                             />
+                            <span>seg</span>
                           </label>
                         )}
 
