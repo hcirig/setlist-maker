@@ -335,7 +335,6 @@ function App() {
               console.warn("No se pudo insertar el logo en el PDF", e);
             }
           } else if (nombreBanda.trim()) {
-            // Si no hay logo pero se ingresó nombre de la banda, se dibuja en la misma posición
             pdf.setFontSize(18);
             pdf.setFont("helvetica", "bold");
             pdf.text(nombreBanda.trim().toUpperCase(), 10, 20);
@@ -420,40 +419,40 @@ function App() {
           
           <div className="field-group">
             <label className="field-label">Nombre:</label>
-            <input 
-              type="text" 
-              className="custom-input"
-              placeholder="Ej: Nombre de tu Banda" 
-              value={nombreBanda} 
-              onChange={(e) => setNombreBanda(e.target.value)}
-            />
-          </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input 
+                type="text" 
+                className="custom-input"
+                placeholder="Ej: Nombre de tu Banda" 
+                value={nombreBanda} 
+                onChange={(e) => setNombreBanda(e.target.value)}
+                style={{ flex: 1, minWidth: 0 }}
+              />
 
-          <div className="field-group" style={{ margin: '5px 0' }}>
-            <input 
-              type="file" 
-              accept="image/*"
-              id="logo-upload"
-              onChange={handleLogoChange}
-              style={{ display: 'none' }}
-            />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label htmlFor="logo-upload" className="btn-pill">
+              <input 
+                type="file" 
+                accept="image/*"
+                id="logo-upload"
+                onChange={handleLogoChange}
+                style={{ display: 'none' }}
+              />
+              
+              <label htmlFor="logo-upload" className="btn-pill" style={{ flexShrink: 0 }}>
                 <i className="fa-regular fa-image btn-icon"></i>
-                <span>CARGAR LOGO</span>
+                <span>SUBIR LOGO</span>
               </label>
 
               {logoUrl && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                   <img 
                     src={logoUrl} 
                     alt="Preview Logo" 
-                    style={{ height: '38px', maxWidth: '80px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
+                    style={{ height: '38px', maxWidth: '60px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
                   />
                   <button 
                     onClick={quitarLogo}
                     title="Quitar Logo"
-                    style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '50%', width: '26px', height: '26px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ backgroundColor: '#f44336', color: '#fff', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8em' }}
                   >
                     <i className="fa-solid fa-xmark"></i>
                   </button>
