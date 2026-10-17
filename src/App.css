@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES V3.1
+   ESTILOS GENERALES Y PALETA DE COLORES V3.2
    ========================================= */
 
 :root {
@@ -72,7 +72,7 @@ body {
   max-width: 360px;
   background-color: #16161c;
   border: 1px solid #2d2d38;
-  border-radius: 9999px; /* Forma de píldora contenedora */
+  border-radius: 9999px;
   padding: 6px 10px;
   box-sizing: border-box;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -84,7 +84,7 @@ body {
   font-size: 1.1em;
   width: 42px;
   height: 42px;
-  border-radius: 50%; /* Botones completamente redondos */
+  border-radius: 50%;
   background-color: #22222a;
   border: 1px solid #333340;
   transition: all 0.2s ease;
@@ -318,11 +318,13 @@ input[type="date"].custom-input {
   width: 100%;
   box-sizing: border-box;
   scroll-margin-top: 65px;
+  min-width: 0; /* Previene el desbordamiento horizontal */
 }
 
 .scroll-area {
   max-height: none; 
   overflow-y: visible;
+  overflow-x: hidden;
   padding-right: 5px;
 }
 
@@ -337,6 +339,7 @@ input[type="date"].custom-input {
   flex-wrap: wrap;
 }
 
+/* MODAL / PANTALLA COMPLETA DESKTOP (992px en adelante) */
 @media (min-width: 992px) {
   .band-show-container {
     flex-direction: row;
@@ -346,18 +349,23 @@ input[type="date"].custom-input {
     flex-direction: row;
   }
 
+  /* Ancho fijo de 280px para Buscador y Panel */
   .columna-catalogo, .columna-panel {
-    flex: 1;
-    width: auto;
+    flex: 0 0 280px;
+    width: 280px;
+    max-width: 280px;
   }
 
+  /* El Setlist ocupa todo el espacio sobrante en el centro */
   .columna-setlist {
-    flex: 2;
+    flex: 1;
     width: auto;
+    min-width: 0;
   }
 
   .scroll-area {
     max-height: 72vh;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 }
