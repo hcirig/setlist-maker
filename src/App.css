@@ -67,6 +67,16 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* Contenedor Principal Limitado a 1200px Centrado */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  width: 100%;
+}
+
 /* Header Centrado */
 .app-header {
   border-bottom: 1px solid var(--border-color);
@@ -486,7 +496,7 @@ body {
     flex-direction: row;
   }
 
-  /* Ancho fijo de máximo 280px para Buscador y Panel de Control */
+  /* Ancho fijo de máximo 280px para Buscador y Panel */
   .columna-catalogo, .columna-panel {
     flex: 0 0 280px;
     width: 280px;
@@ -494,7 +504,7 @@ body {
     min-width: 0;
   }
 
-  /* El Setlist ocupa todo el espacio central sobrante */
+  /* El Setlist ocupa todo el espacio sobrante en el centro */
   .columna-setlist {
     flex: 1;
     width: auto;

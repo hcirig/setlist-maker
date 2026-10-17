@@ -576,7 +576,7 @@ function App() {
   };
 
   return (
-    <div style={{ padding: '20px', minHeight: '100vh', boxSizing: 'border-box' }}>
+    <div className="app-container">
       
       {/* HEADER CON BOTONES SUPERIORES Y LOGO */}
       <header className="app-header">
@@ -601,10 +601,16 @@ function App() {
         </div>
 
         <img 
-          src="/header-logo.png" 
+          key={tema}
+          src={tema === 'light' ? '/header-logo-light.png' : '/header-logo.png'} 
           alt="Setlist Creator" 
           className="header-banner"
           onError={(e) => {
+            // Si no existe header-logo-light.png se prueba con header-logo.png
+            if (e.target.src.includes('header-logo-light.png')) {
+              e.target.src = '/header-logo.png';
+              return;
+            }
             e.target.style.display = 'none';
             if (!document.getElementById('fallback-title')) {
               const h1 = document.createElement('h1');
