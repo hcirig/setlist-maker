@@ -90,6 +90,12 @@ function App() {
     ejecutarBusqueda();
   };
 
+  const limpiarBusqueda = () => {
+    setBusqueda('');
+    setResultados([]);
+    setErrorBusqueda(null);
+  };
+
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -281,7 +287,6 @@ function App() {
     const logoHeight = 20; 
     let textStartX = 10;
 
-    // Cálculo dinámico del desplazamiento según Logo o Nombre
     if (logoUrl) {
       if (logoDimensions.height > 0) {
         const ratio = logoDimensions.width / logoDimensions.height;
@@ -292,7 +297,6 @@ function App() {
       }
       textStartX = 10 + logoWidth + 5;
     } else if (nombreBanda.trim()) {
-      // Estimación de ancho del texto para desplazar los datos del show a la derecha
       const textoBanda = nombreBanda.trim().toUpperCase();
       const anchoEstimado = Math.min(80, Math.max(35, textoBanda.length * 4.2));
       textStartX = 10 + anchoEstimado + 5;
@@ -344,7 +348,6 @@ function App() {
               console.warn("No se pudo insertar el logo en el PDF", e);
             }
           } else if (nombreBanda.trim()) {
-            // Nombre en Negrita y Cursiva
             pdf.setFontSize(18);
             pdf.setFont("helvetica", "bolditalic");
             pdf.text(nombreBanda.trim().toUpperCase(), 10, 20);
@@ -537,7 +540,12 @@ function App() {
               className="custom-input"
               placeholder="Artista, canción..." 
               value={busqueda} 
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                if (!e.target.value.trim()) {
+                  setResultados([]);
+                }
+              }}
               style={{ flex: 1, minWidth: 0 }}
             />
             <button 
@@ -548,6 +556,18 @@ function App() {
             >
               <i className="fa-solid fa-magnifying-glass btn-icon"></i>
             </button>
+
+            {(busqueda || resultados.length > 0) && (
+              <button 
+                type="button" 
+                onClick={limpiarBusqueda}
+                className="btn-danger-round"
+                style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
+                title="Limpiar buscador"
+              >
+                ✕
+              </button>
+            )}
           </form>
 
           <div className="scroll-area">
