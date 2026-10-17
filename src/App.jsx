@@ -44,6 +44,8 @@ function App() {
   const [nombreCancionExtra, setNombreCancionExtra] = useState("");
   const [duracionCancionExtra, setDuracionCancionExtra] = useState("03:30");
 
+  // Datos del Show y Banda
+  const [nombreBanda, setNombreBanda] = useState("");
   const [fecha, setFecha] = useState("");
   const [venue, setVenue] = useState("");
   const [ciudad, setCiudad] = useState("");
@@ -332,6 +334,11 @@ function App() {
             } catch (e) {
               console.warn("No se pudo insertar el logo en el PDF", e);
             }
+          } else if (nombreBanda.trim()) {
+            // Si no hay logo pero se ingresó nombre de la banda, se dibuja en la misma posición
+            pdf.setFontSize(18);
+            pdf.setFont("helvetica", "bold");
+            pdf.text(nombreBanda.trim().toUpperCase(), 10, 20);
           }
 
           pdf.setFontSize(12);
@@ -411,7 +418,18 @@ function App() {
         <div className="section-block">
           <h2 className="section-title-right">Mi Banda</h2>
           
-          <div className="field-group" style={{ marginBottom: '10px' }}>
+          <div className="field-group">
+            <label className="field-label">Nombre:</label>
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder="Ej: Nombre de tu Banda" 
+              value={nombreBanda} 
+              onChange={(e) => setNombreBanda(e.target.value)}
+            />
+          </div>
+
+          <div className="field-group" style={{ margin: '5px 0' }}>
             <input 
               type="file" 
               accept="image/*"
@@ -422,7 +440,7 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <label htmlFor="logo-upload" className="btn-pill">
                 <i className="fa-regular fa-image btn-icon"></i>
-                <span>cargar logo</span>
+                <span>CARGAR LOGO</span>
               </label>
 
               {logoUrl && (

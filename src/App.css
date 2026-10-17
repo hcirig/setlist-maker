@@ -10,7 +10,6 @@
   --text-main: #e0e0e0;
   --text-muted: #9e9ea8;
   
-  /* Nuevos Colores Personalizados */
   --btn-blue: #008dfe;
   --btn-violet: #9030fd;
   --btn-violet-dark: #6e1ed3;
@@ -77,12 +76,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  text-align: left; /* Alineado de campos y labels a la izquierda */
 }
 
 .field-label {
   font-size: 0.85em;
   font-weight: 500;
   color: var(--text-muted);
+  text-align: left;
 }
 
 /* Inputs y Selects Estandarizados */
@@ -108,7 +109,7 @@ input[type="date"].custom-input {
   color-scheme: dark;
 }
 
-/* Botón Estilo Píldora con Azul Default */
+/* Botón Estilo Píldora */
 .btn-pill {
   height: 42px;
   padding: 0 20px;
@@ -116,7 +117,7 @@ input[type="date"].custom-input {
   border: 1px solid var(--btn-blue);
   background-color: var(--btn-blue);
   color: #ffffff;
-  font-size: 0.9em;
+  font-size: 0.85em;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -185,7 +186,6 @@ input[type="date"].custom-input {
   box-shadow: none;
 }
 
-/* Iconos */
 .btn-icon {
   font-size: 1.1em;
 }
