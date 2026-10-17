@@ -423,14 +423,16 @@ function App() {
         />
       </header>
 
-      {/* NAVBAR MOBILE PEGAJOSO */}
-      <nav className="mobile-nav">
-        <a href="#sec-mi-banda" className="mobile-nav-link">Mi Banda</a>
-        <a href="#sec-proximo-show" className="mobile-nav-link">Próximo Show</a>
-        <a href="#sec-buscador" className="mobile-nav-link">Buscador</a>
-        <a href="#sec-setlist" className="mobile-nav-link">Setlist</a>
-        <a href="#sec-panel" className="mobile-nav-link">Panel de Control</a>
-      </nav>
+      {/* NAVBAR MOBILE FIJO DE 360PX CUADRADO */}
+      <div className="mobile-nav-container">
+        <nav className="mobile-nav">
+          <a href="#sec-mi-banda" className="mobile-nav-link">Mi<br/>Banda</a>
+          <a href="#sec-proximo-show" className="mobile-nav-link">Próx.<br/>Show</a>
+          <a href="#sec-buscador" className="mobile-nav-link">Busca-<br/>dor</a>
+          <a href="#sec-setlist" className="mobile-nav-link">Setlist</a>
+          <a href="#sec-panel" className="mobile-nav-link">Panel<br/>Control</a>
+        </nav>
+      </div>
 
       {/* CONTENEDOR SECCIONES "MI BANDA" Y "PRÓXIMO SHOW" */}
       <section className="band-show-container">

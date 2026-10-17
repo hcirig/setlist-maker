@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES V2.9
+   ESTILOS GENERALES Y PALETA DE COLORES V3.0
    ========================================= */
 
 :root {
@@ -23,19 +23,24 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   padding: 0;
-  scroll-behavior: smooth; /* Permite scroll suave al hacer clic en los accesos directos */
+  scroll-behavior: smooth;
 }
 
-/* Header */
+/* Header Centrado */
 .app-header {
   border-bottom: 1px solid #2d2d35;
-  padding: 20px 15px 10px 15px;
-  text-align: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header-banner {
   max-width: 500px;
-  max-height: 150px;
+  max-height: 140px;
   width: 100%;
   height: auto;
   object-fit: contain;
@@ -43,34 +48,52 @@ body {
   display: block;
 }
 
-/* NAVBAR MOBILE (Pegajoso) */
-.mobile-nav {
-  display: flex;
-  overflow-x: auto;
-  white-space: nowrap;
-  background-color: #16161c;
-  border-bottom: 1px solid #2d2d38;
-  padding: 8px 10px;
-  gap: 8px;
+/* NAVBAR MOBILE: Cuadrado, Ancho Fijo 360px, Sticky */
+.mobile-nav-container {
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+  background-color: var(--bg-dark);
+  padding: 6px 0;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.mobile-nav {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+  width: 360px;
+  max-width: 360px;
+  background-color: #16161c;
+  border: 1px solid #2d2d38;
+  border-radius: 8px;
+  padding: 5px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .mobile-nav-link {
-  color: var(--text-muted);
+  color: var(--text-main);
   text-decoration: none;
-  font-size: 0.75em;
+  font-size: 0.68em;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 6px 12px;
-  border-radius: 9999px;
+  letter-spacing: 0.2px;
+  padding: 6px 2px;
+  border-radius: 6px; /* Bordes apenas redondeados */
   background-color: #22222a;
   border: 1px solid #333340;
   transition: all 0.2s ease;
-  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.15;
+  height: 38px;
+  box-sizing: border-box;
+  hyphens: auto;
 }
 
 .mobile-nav-link:hover, .mobile-nav-link:active {
@@ -79,14 +102,14 @@ body {
   border-color: var(--btn-blue);
 }
 
-/* Esconder la barra en pantallas de Escritorio */
+/* Ocultar la barra en pantallas de Escritorio */
 @media (min-width: 992px) {
-  .mobile-nav {
+  .mobile-nav-container {
     display: none;
   }
 }
 
-/* Secciones divididas: Mi Banda & Próximo Show */
+/* Secciones y Estructura Principal */
 .band-show-container {
   display: flex;
   flex-direction: column;
@@ -96,8 +119,8 @@ body {
   border-radius: 12px;
   border: 1px solid #2d2d38;
   box-sizing: border-box;
-  margin-top: 15px;
-  scroll-margin-top: 60px; /* Offset para que el navbar pegajoso no tape la sección al navegar */
+  margin-top: 10px;
+  scroll-margin-top: 65px;
 }
 
 .section-block {
@@ -105,7 +128,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  scroll-margin-top: 60px;
+  scroll-margin-top: 65px;
 }
 
 .section-title-right {
@@ -134,7 +157,7 @@ body {
   text-align: left;
 }
 
-/* Inputs y Selects Estandarizados (Height 40px) */
+/* Inputs y Selects */
 .custom-input {
   height: 40px;
   padding: 0 12px;
@@ -157,7 +180,7 @@ input[type="date"].custom-input {
   color-scheme: dark;
 }
 
-/* Botón Estilo Píldora / Redondeado (Height 40px) */
+/* Botones */
 .btn-pill {
   height: 40px;
   padding: 0 20px;
@@ -179,7 +202,6 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Redondo Blue (Height 40px, Width 40px) */
 .btn-round {
   width: 40px;
   height: 40px;
@@ -200,7 +222,6 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Peligro / Cerrar Píldora */
 .btn-danger-pill {
   height: 40px;
   padding: 0 18px;
@@ -221,7 +242,6 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Peligro / Quitar / Limpiar Redondo */
 .btn-danger-round {
   width: 30px;
   height: 30px;
@@ -243,7 +263,7 @@ input[type="date"].custom-input {
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Animación Reflejo Metalizado */
+/* Animaciones */
 .btn-pill::after, .btn-round::after, .btn-danger-pill::after, .btn-danger-round::after {
   content: '';
   position: absolute;
@@ -280,18 +300,6 @@ input[type="date"].custom-input {
   color: #ffffff;
 }
 
-.btn-pill:active, .btn-round:active {
-  background-color: var(--btn-violet-dark);
-  border-color: var(--btn-violet-dark);
-  box-shadow: none;
-}
-
-.btn-danger-pill:active, .btn-danger-round:active {
-  background-color: var(--btn-danger-dark);
-  border-color: var(--btn-danger-dark);
-  box-shadow: none;
-}
-
 .btn-icon {
   font-size: 1.1em;
 }
@@ -309,7 +317,7 @@ input[type="date"].custom-input {
 .columna-catalogo, .columna-panel, .columna-setlist {
   width: 100%;
   box-sizing: border-box;
-  scroll-margin-top: 60px; /* Evita que el header tape el título al hacer clic */
+  scroll-margin-top: 65px;
 }
 
 .scroll-area {
