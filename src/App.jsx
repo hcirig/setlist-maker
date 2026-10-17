@@ -423,14 +423,24 @@ function App() {
         />
       </header>
 
-      {/* NAVBAR MOBILE FIJO DE 360PX CUADRADO */}
+      {/* NAVBAR MOBILE CON ICONOS EN BOTONES REDONDOS */}
       <div className="mobile-nav-container">
         <nav className="mobile-nav">
-          <a href="#sec-mi-banda" className="mobile-nav-link">Mi<br/>Banda</a>
-          <a href="#sec-proximo-show" className="mobile-nav-link">Próx.<br/>Show</a>
-          <a href="#sec-buscador" className="mobile-nav-link">Busca-<br/>dor</a>
-          <a href="#sec-setlist" className="mobile-nav-link">Setlist</a>
-          <a href="#sec-panel" className="mobile-nav-link">Panel<br/>Control</a>
+          <a href="#sec-mi-banda" className="mobile-nav-link" title="Mi Banda">
+            <i className="fa-solid fa-people-group"></i>
+          </a>
+          <a href="#sec-proximo-show" className="mobile-nav-link" title="Próximo Show">
+            <i className="fa-solid fa-calendar-days"></i>
+          </a>
+          <a href="#sec-buscador" className="mobile-nav-link" title="Buscador">
+            <i className="fa-solid fa-magnifying-glass"></i>
+          </a>
+          <a href="#sec-setlist" className="mobile-nav-link" title="Setlist">
+            <i className="fa-solid fa-file-lines"></i>
+          </a>
+          <a href="#sec-panel" className="mobile-nav-link" title="Panel de Control">
+            <i className="fa-solid fa-gear"></i>
+          </a>
         </nav>
       </div>
 

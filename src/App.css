@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES V3.0
+   ESTILOS GENERALES Y PALETA DE COLORES V3.1
    ========================================= */
 
 :root {
@@ -38,6 +38,10 @@ body {
   box-sizing: border-box;
 }
 
+.app-header img {
+  margin-bottom: 20px;
+}
+
 .header-banner {
   max-width: 500px;
   max-height: 140px;
@@ -48,7 +52,7 @@ body {
   display: block;
 }
 
-/* NAVBAR MOBILE: Cuadrado, Ancho Fijo 360px, Sticky */
+/* NAVBAR MOBILE: Botones Redondos con Iconos, Ancho Fijo 360px, Sticky */
 .mobile-nav-container {
   position: sticky;
   top: 0;
@@ -61,15 +65,15 @@ body {
 }
 
 .mobile-nav {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
   width: 360px;
   max-width: 360px;
   background-color: #16161c;
   border: 1px solid #2d2d38;
-  border-radius: 8px;
-  padding: 5px;
+  border-radius: 9999px; /* Forma de píldora contenedora */
+  padding: 6px 10px;
   box-sizing: border-box;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
@@ -77,29 +81,25 @@ body {
 .mobile-nav-link {
   color: var(--text-main);
   text-decoration: none;
-  font-size: 0.68em;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
-  padding: 6px 2px;
-  border-radius: 6px; /* Bordes apenas redondeados */
+  font-size: 1.1em;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%; /* Botones completamente redondos */
   background-color: #22222a;
   border: 1px solid #333340;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  line-height: 1.15;
-  height: 38px;
+  flex-shrink: 0;
   box-sizing: border-box;
-  hyphens: auto;
 }
 
 .mobile-nav-link:hover, .mobile-nav-link:active {
   color: #ffffff;
   background-color: var(--btn-blue);
   border-color: var(--btn-blue);
+  box-shadow: 0 0 10px rgba(0, 141, 254, 0.5);
 }
 
 /* Ocultar la barra en pantallas de Escritorio */
@@ -180,7 +180,7 @@ input[type="date"].custom-input {
   color-scheme: dark;
 }
 
-/* Botones */
+/* Botones Estándar */
 .btn-pill {
   height: 40px;
   padding: 0 20px;
