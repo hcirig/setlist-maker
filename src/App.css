@@ -1,5 +1,5 @@
 /* =========================================
-   ESTILOS GENERALES Y PALETA DE COLORES
+   ESTILOS GENERALES Y PALETA DE COLORES V2.5
    ========================================= */
 
 :root {
@@ -76,7 +76,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  text-align: left; /* Alineado de campos y labels a la izquierda */
+  text-align: left;
 }
 
 .field-label {
@@ -86,9 +86,9 @@ body {
   text-align: left;
 }
 
-/* Inputs y Selects Estandarizados */
+/* Inputs y Selects Estandarizados (Height 40px) */
 .custom-input {
-  height: 42px;
+  height: 40px;
   padding: 0 12px;
   border-radius: 6px;
   border: 1px solid var(--input-border);
@@ -109,9 +109,9 @@ input[type="date"].custom-input {
   color-scheme: dark;
 }
 
-/* Botón Estilo Píldora */
+/* Botón Estilo Píldora (Height 40px) */
 .btn-pill {
-  height: 42px;
+  height: 40px;
   padding: 0 20px;
   border-radius: 9999px;
   border: 1px solid var(--btn-blue);
@@ -127,12 +127,13 @@ input[type="date"].custom-input {
   width: fit-content;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Botón Estilo Bloque/Cuadrado */
+/* Botón Estilo Acción General (Height 40px) */
 .btn-action {
-  height: 42px;
+  height: 40px;
   padding: 0 16px;
   border-radius: 6px;
   border: 1px solid var(--btn-blue);
@@ -147,11 +148,32 @@ input[type="date"].custom-input {
   gap: 8px;
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Animación Reflejo Metalizado + Cambio a Violeta (#9030fd) en Hover */
-.btn-pill::after, .btn-action::after {
+/* Botón Redondo (Lupa) (Height 40px, Width 40px) */
+.btn-round {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--btn-blue);
+  background-color: var(--btn-blue);
+  color: #ffffff;
+  font-size: 0.9em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Animación Reflejo Metalizado */
+.btn-pill::after, .btn-action::after, .btn-round::after {
   content: '';
   position: absolute;
   top: 0;
@@ -168,19 +190,19 @@ input[type="date"].custom-input {
   transition: none;
 }
 
-.btn-pill:hover::after, .btn-action:hover::after {
+.btn-pill:hover::after, .btn-action:hover::after, .btn-round:hover::after {
   left: 160%;
   transition: all 0.55s ease-in-out;
 }
 
-.btn-pill:hover, .btn-action:hover {
+.btn-pill:hover, .btn-action:hover, .btn-round:hover {
   background-color: var(--btn-violet);
   border-color: var(--btn-violet);
   box-shadow: 0 0 12px rgba(144, 48, 253, 0.4);
   color: #ffffff;
 }
 
-.btn-pill:active, .btn-action:active {
+.btn-pill:active, .btn-action:active, .btn-round:active {
   background-color: var(--btn-violet-dark);
   border-color: var(--btn-violet-dark);
   box-shadow: none;
