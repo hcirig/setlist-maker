@@ -423,11 +423,20 @@ function App() {
         />
       </header>
 
+      {/* NAVBAR MOBILE PEGAJOSO */}
+      <nav className="mobile-nav">
+        <a href="#sec-mi-banda" className="mobile-nav-link">Mi Banda</a>
+        <a href="#sec-proximo-show" className="mobile-nav-link">Próximo Show</a>
+        <a href="#sec-buscador" className="mobile-nav-link">Buscador</a>
+        <a href="#sec-setlist" className="mobile-nav-link">Setlist</a>
+        <a href="#sec-panel" className="mobile-nav-link">Panel de Control</a>
+      </nav>
+
       {/* CONTENEDOR SECCIONES "MI BANDA" Y "PRÓXIMO SHOW" */}
       <section className="band-show-container">
         
         {/* MI BANDA */}
-        <div className="section-block">
+        <div id="sec-mi-banda" className="section-block">
           <h2 className="section-title-right">Mi Banda</h2>
           
           <div className="field-group">
@@ -487,7 +496,7 @@ function App() {
         </div>
 
         {/* PRÓXIMO SHOW */}
-        <div className="section-block">
+        <div id="sec-proximo-show" className="section-block">
           <h2 className="section-title-right">Próximo Show</h2>
           
           <div className="field-group">
@@ -529,7 +538,7 @@ function App() {
       <main className="main-container">
         
         {/* BUSCADOR DE CANCIONES */}
-        <section className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, boxSizing: 'border-box', border: '1px solid #2d2d38' }}>
+        <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
           <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
             Buscador
           </h2>
@@ -627,7 +636,7 @@ function App() {
         </section>
 
         {/* SETLIST PRINCIPAL */}
-        <section className="columna-setlist" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, border: '1px solid #2d2d38' }}>
+        <section id="sec-setlist" className="columna-setlist" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
             <h2 style={{ margin: '0', fontSize: '1.1em', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)' }}>
               Tu Setlist
@@ -794,7 +803,7 @@ function App() {
         </section>
 
         {/* PANEL DE CONTROL */}
-        <section className="columna-panel" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', minWidth: 0, border: '1px solid #2d2d38' }}>
+        <section id="sec-panel" className="columna-panel" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
           <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
             Panel de Control
           </h2>
