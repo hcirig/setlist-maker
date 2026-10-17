@@ -760,24 +760,7 @@ function App() {
             Panel de Control
           </h2>
           
-          <button 
-            onClick={() => setMostrarPreview(true)}
-            disabled={setlistRenderizado.length === 0}
-            className="btn-action"
-            style={{ width: '100%', padding: '0 12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.95em', marginBottom: '15px', justifyContent: 'center' }}
-          >
-            <i className="fa-regular fa-file-pdf btn-icon"></i>
-            <span>EXPORTAR</span>
-          </button>
-
-          <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
-            <h3 style={{ margin: '0 0 5px 0', color: '#888', fontSize: '0.85em', textTransform: 'uppercase' }}>Tiempo Total Estimado</h3>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#008dfe' }}>
-              {formatearTiempoTotal(tiempoTotalShow)}
-            </div>
-          </div>
-
-          {/* PAUSA ENTRE TEMAS */}
+          {/* 1. PAUSA ENTRE TEMAS */}
           <div className="field-group" style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
             <label className="field-label">Pausa entre temas:</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -792,8 +775,8 @@ function App() {
             </div>
           </div>
 
-          {/* FILA ESPECIAL */}
-          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', border: '1px solid #333342' }}>
+          {/* 2. FILA ESPECIAL */}
+          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
             <h2 className="section-title-right" style={{ fontSize: '0.95em', margin: '0 0 10px 0' }}>
               Fila Especial
             </h2>
@@ -873,9 +856,28 @@ function App() {
               style={{ width: '100%', justifyContent: 'center' }}
             >
               <i className="fa-solid fa-plus btn-icon"></i>
-              <span>AGREGAR BLOQUE</span>
+              <span>+ FILA</span>
             </button>
           </div>
+
+          {/* 3. RELOJ / TIEMPO TOTAL ESTIMADO */}
+          <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
+            <h3 style={{ margin: '0 0 5px 0', color: '#888', fontSize: '0.85em', textTransform: 'uppercase' }}>Tiempo Total Estimado</h3>
+            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#008dfe' }}>
+              {formatearTiempoTotal(tiempoTotalShow)}
+            </div>
+          </div>
+
+          {/* 4. BOTÓN EXPORTAR */}
+          <button 
+            onClick={() => setMostrarPreview(true)}
+            disabled={setlistRenderizado.length === 0}
+            className="btn-pill"
+            style={{ width: '100%', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.95em', justifyContent: 'center' }}
+          >
+            <i className="fa-regular fa-file-pdf btn-icon"></i>
+            <span>EXPORTAR</span>
+          </button>
 
         </section>
 
@@ -892,32 +894,33 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Interlineado:</span>
-                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-action" style={{ padding: '0 10px' }}>-</button>
+                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round">-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
-                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-action" style={{ padding: '0 10px' }}>+</button>
+                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round">+</button>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #333340' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Fuente:</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-action" style={{ padding: '0 10px' }}>-</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round">-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-action" style={{ padding: '0 10px' }}>+</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round">+</button>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button 
                   onClick={() => procesarPDF('descargar')}
-                  className="btn-action"
-                  style={{ padding: '0 16px' }}
+                  className="btn-pill"
                 >
-                  <i className="fa-solid fa-download"></i> Descargar PDF
+                  <i className="fa-solid fa-download"></i>
+                  <span>DESCARGAR</span>
                 </button>
+                
                 <button 
                   onClick={() => setMostrarPreview(false)}
-                  style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '0 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em', height: '40px' }}
+                  className="btn-danger-pill"
                 >
-                  ✕ Cerrar
+                  ✕ CERRAR
                 </button>
               </div>
             </div>
