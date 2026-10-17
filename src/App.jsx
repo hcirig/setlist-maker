@@ -24,6 +24,7 @@ const limpiarTituloCancion = (nombreOriginal) => {
 };
 
 function App() {
+  const [terminoBuscado, setTerminoBuscado] = useState('');
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
@@ -67,14 +68,16 @@ function App() {
     return () => clearTimeout(timeoutId);
   }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf]);
 
-  const ejecutarBusqueda = async (termino) => {
+const ejecutarBusqueda = async (termino) => {
     const query = termino || busqueda;
     if (!query.trim()) return;
 
     setCargandoBusqueda(true);
     setErrorBusqueda(null);
+    setTerminoBuscado(query); // Guardamos la consulta exacta efectuada
     try {
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=50`);
+      // Ampliamos a 200 resultados para obtener discos completos
+      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=200`);
       if (!res.ok) throw new Error('Error al conectar con el servidor de música.');
       const data = await res.json();
       setResultados(data.results || []);
@@ -136,29 +139,37 @@ const agruparPorDisco = () => {
       agrupado[discoNombre].canciones.push(track);
     });
 
-    // 1. Ordenar las canciones DENTRO de cada álbum por número de pista (Track 1, 2, 3...)
+    // 1. Ordenar canciones internamente por número de pista (Track 1, 2, 3...)
     Object.values(agrupado).forEach((disco) => {
       disco.canciones.sort((a, b) => (a.trackNumber || 0) - (b.trackNumber || 0));
     });
 
-    // 2. Ordenar los ÁLBUMES por relevancia y año
+    // 2. Ordenar discos según relevancia con respecto a lo buscado
+    const queryLimpia = terminoBuscado.toLowerCase().trim();
+
     return Object.values(agrupado).sort((a, b) => {
-      // "Sencillos / Varios" siempre al final
       if (a.nombreDisco === 'Sencillos / Varios') return 1;
       if (b.nombreDisco === 'Sencillos / Varios') return -1;
 
-      // Priorizar discos cuyo artista coincida con la búsqueda actual
-      const terminoLimpio = busqueda.toLowerCase().trim();
-      const aEsArtistaPrincipal = a.artista.toLowerCase().includes(terminoLimpio);
-      const bEsArtistaPrincipal = b.artista.toLowerCase().includes(terminoLimpio);
+      // Evaluar coincidencia en Artista y/o en Nombre del Disco
+      const aCoincideArtista = a.artista.toLowerCase().includes(queryLimpia) || queryLimpia.includes(a.artista.toLowerCase());
+      const bCoincideArtista = b.artista.toLowerCase().includes(queryLimpia) || queryLimpia.includes(b.artista.toLowerCase());
 
-      if (aEsArtistaPrincipal && !bEsArtistaPrincipal) return -1;
-      if (!aEsArtistaPrincipal && bEsArtistaPrincipal) return 1;
+      const aCoincideDisco = a.nombreDisco.toLowerCase().includes(queryLimpia);
+      const bCoincideDisco = b.nombreDisco.toLowerCase().includes(queryLimpia);
 
-      // Si ambos coinciden, ordenar por año (más reciente primero: b.anio - a.anio)
+      // Asignar puntaje de relevancia
+      const aPuntaje = (aCoincideArtista ? 2 : 0) + (aCoincideDisco ? 3 : 0);
+      const bPuntaje = (bCoincideArtista ? 2 : 0) + (bCoincideDisco ? 3 : 0);
+
+      if (aPuntaje !== bPuntaje) {
+        return bPuntaje - aPuntaje;
+      }
+
+      // Si empatan en relevancia, ordenar por año más reciente
       if (a.anio === null) return 1;
       if (b.anio === null) return -1;
-      return b.anio - a.anio; // Cambiar a "a.anio - b.anio" si prefieres más viejos primero
+      return b.anio - a.anio;
     });
   };
 
