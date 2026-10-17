@@ -521,7 +521,7 @@ function App() {
             Buscador
           </h2>
           
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
             <input 
               type="text" 
               className="custom-input"
@@ -533,7 +533,8 @@ function App() {
             <button 
               type="submit" 
               disabled={cargandoBusqueda}
-              className="btn-action"
+              className="btn-round"
+              title="Buscar"
             >
               <i className="fa-solid fa-magnifying-glass btn-icon"></i>
             </button>
@@ -545,20 +546,9 @@ function App() {
             ) : errorBusqueda ? (
               <p style={{ color: '#f44336', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
             ) : resultados.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#888', padding: '15px 5px', fontSize: '0.85em' }}>
-                <p style={{ marginBottom: '10px' }}>Busca por artista o tema para armar tu setlist.</p>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-                  {['Soda Stereo', 'Queen', 'Whitesnake', 'Journey', 'Metallica'].map((term) => (
-                    <button
-                      key={term}
-                      onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
-                      style={{ backgroundColor: '#2a2a32', color: '#008dfe', border: '1px solid #008dfe', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75em', cursor: 'pointer' }}
-                    >
-                      {term}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <p style={{ color: '#888', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
+                Escribe el nombre de un artista o canción arriba para buscar...
+              </p>
             ) : (
               discosAgrupados.map((disco) => (
                 <details key={disco.nombreDisco} open style={{ marginBottom: '8px', backgroundColor: '#262630', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333342' }}>
@@ -774,10 +764,10 @@ function App() {
             onClick={() => setMostrarPreview(true)}
             disabled={setlistRenderizado.length === 0}
             className="btn-action"
-            style={{ width: '100%', padding: '12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '1em', marginBottom: '15px', justifyContent: 'center' }}
+            style={{ width: '100%', padding: '0 12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.95em', marginBottom: '15px', justifyContent: 'center' }}
           >
             <i className="fa-regular fa-file-pdf btn-icon"></i>
-            <span>VISTA PREVIA DEL PDF</span>
+            <span>EXPORTAR</span>
           </button>
 
           <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
@@ -787,89 +777,103 @@ function App() {
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
-            <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '0.85em', color: '#aaa' }}>
-              Tiempo muerto (Gap) en seg:
-            </label>
-            <input 
-              type="number" 
-              value={gap} 
-              onChange={(e) => setGap(e.target.value)}
-              className="custom-input"
-              style={{ width: '100%' }}
-            />
+          {/* PAUSA ENTRE TEMAS */}
+          <div className="field-group" style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #333342' }}>
+            <label className="field-label">Pausa entre temas:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input 
+                type="number" 
+                value={gap} 
+                onChange={(e) => setGap(e.target.value)}
+                className="custom-input"
+                style={{ flex: 1, minWidth: 0 }}
+              />
+              <span style={{ fontSize: '0.9em', color: '#aaa', fontWeight: 'bold' }}>seg</span>
+            </div>
           </div>
 
+          {/* FILA ESPECIAL */}
           <div style={{ backgroundColor: '#262630', padding: '12px', borderRadius: '8px', border: '1px solid #333342' }}>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '0.95em', textTransform: 'uppercase', color: '#ccc' }}>Insertar Bloque</h3>
+            <h2 className="section-title-right" style={{ fontSize: '0.95em', margin: '0 0 10px 0' }}>
+              Fila Especial
+            </h2>
             
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Tipo:</label>
-            <select 
-              value={tipoEspecial} 
-              onChange={(e) => setTipoEspecial(e.target.value)}
-              className="custom-input"
-              style={{ width: '100%', marginBottom: '10px' }}
-            >
-              <option value="Speech">Speech</option>
-              <option value="Intervalo">Intervalo</option>
-              <option value="Encore">Encore</option>
-              <option value="Texto Libre">Texto Libre (Separador)</option>
-              <option value="Canción">Canción (Fuera de catálogo)</option>
-            </select>
+            <div className="field-group" style={{ marginBottom: '10px' }}>
+              <label className="field-label">Tipo:</label>
+              <select 
+                value={tipoEspecial} 
+                onChange={(e) => setTipoEspecial(e.target.value)}
+                className="custom-input"
+                style={{ width: '100%' }}
+              >
+                <option value="Speech">Speech</option>
+                <option value="Intervalo">Intervalo</option>
+                <option value="Encore">Encore</option>
+                <option value="Texto Libre">Texto Libre (Separador)</option>
+                <option value="Canción">Canción (Fuera de catálogo)</option>
+              </select>
+            </div>
 
             {tipoEspecial === "Texto Libre" ? (
-              <>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Texto a mostrar:</label>
+              <div className="field-group" style={{ marginBottom: '12px' }}>
+                <label className="field-label">Texto a mostrar:</label>
                 <input 
                   type="text" 
                   value={textoLibre} 
                   onChange={(e) => setTextoLibre(e.target.value)}
                   placeholder="Ej: SET 1"
                   className="custom-input"
-                  style={{ width: '100%', marginBottom: '12px', textTransform: 'uppercase' }}
+                  style={{ width: '100%', textTransform: 'uppercase' }}
                 />
-              </>
+              </div>
             ) : tipoEspecial === "Canción" ? (
               <>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Nombre de la canción:</label>
-                <input 
-                  type="text" 
-                  value={nombreCancionExtra} 
-                  onChange={(e) => setNombreCancionExtra(e.target.value)}
-                  placeholder="Ej: Song Title"
-                  className="custom-input"
-                  style={{ width: '100%', marginBottom: '8px' }}
-                />
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Duración (mm:ss):</label>
-                <input 
-                  type="text" 
-                  value={duracionCancionExtra} 
-                  onChange={(e) => setDuracionCancionExtra(e.target.value)}
-                  placeholder="03:30"
-                  className="custom-input"
-                  style={{ width: '100%', marginBottom: '12px' }}
-                />
+                <div className="field-group" style={{ marginBottom: '8px' }}>
+                  <label className="field-label">Nombre de la canción:</label>
+                  <input 
+                    type="text" 
+                    value={nombreCancionExtra} 
+                    onChange={(e) => setNombreCancionExtra(e.target.value)}
+                    placeholder="Ej: Song Title"
+                    className="custom-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div className="field-group" style={{ marginBottom: '12px' }}>
+                  <label className="field-label">Duración (mm:ss):</label>
+                  <input 
+                    type="text" 
+                    value={duracionCancionExtra} 
+                    onChange={(e) => setDuracionCancionExtra(e.target.value)}
+                    placeholder="03:30"
+                    className="custom-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
               </>
             ) : (
-              <>
-                <label style={{ display: 'block', marginBottom: '4px', fontSize: '0.8em', color: '#aaa' }}>Minutos estimados:</label>
-                <input 
-                  type="number" 
-                  value={minutosEspecial} 
-                  onChange={(e) => setMinutosEspecial(e.target.value)}
-                  className="custom-input"
-                  style={{ width: '100%', marginBottom: '12px' }}
-                />
-              </>
+              <div className="field-group" style={{ marginBottom: '12px' }}>
+                <label className="field-label">Duración:</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="number" 
+                    value={minutosEspecial} 
+                    onChange={(e) => setMinutosEspecial(e.target.value)}
+                    className="custom-input"
+                    style={{ flex: 1, minWidth: 0 }}
+                  />
+                  <span style={{ fontSize: '0.9em', color: '#aaa', fontWeight: 'bold' }}>min</span>
+                </div>
+              </div>
             )}
 
             <button 
               onClick={agregarBloqueEspecial}
-              className="btn-action"
+              className="btn-pill"
               style={{ width: '100%', justifyContent: 'center' }}
             >
               <i className="fa-solid fa-plus btn-icon"></i>
-              <span>Agregar Bloque</span>
+              <span>AGREGAR BLOQUE</span>
             </button>
           </div>
 
@@ -888,16 +892,16 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Interlineado:</span>
-                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>-</button>
+                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-action" style={{ padding: '0 10px' }}>-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
-                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>+</button>
+                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-action" style={{ padding: '0 10px' }}>+</button>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #333340' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Fuente:</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>-</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-action" style={{ padding: '0 10px' }}>-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>+</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-action" style={{ padding: '0 10px' }}>+</button>
                 </div>
               </div>
 
@@ -905,13 +909,13 @@ function App() {
                 <button 
                   onClick={() => procesarPDF('descargar')}
                   className="btn-action"
-                  style={{ padding: '8px 16px' }}
+                  style={{ padding: '0 16px' }}
                 >
                   <i className="fa-solid fa-download"></i> Descargar PDF
                 </button>
                 <button 
                   onClick={() => setMostrarPreview(false)}
-                  style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '8px 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em' }}
+                  style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '0 14px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em', height: '40px' }}
                 >
                   ✕ Cerrar
                 </button>
