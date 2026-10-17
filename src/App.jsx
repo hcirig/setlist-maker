@@ -24,31 +24,26 @@ const limpiarTituloCancion = (nombreOriginal) => {
 };
 
 function App() {
-  // Buscador e integración API iTunes
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState(null);
 
-  // Estado del Setlist
   const [setlist, setSetlist] = useState([]);
   const [gap, setGap] = useState(15);
   
-  // Configuración e impresión de PDF
   const [espaciadoPdf, setEspaciadoPdf] = useState(18);
   const [tamanoFuentePdf, setTamanoFuentePdf] = useState(28);
   const [mostrarPreview, setMostrarPreview] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
 
-  // Bloques especiales y extras
   const [tipoEspecial, setTipoEspecial] = useState("Speech");
   const [minutosEspecial, setMinutosEspecial] = useState(2);
   const [textoLibre, setTextoLibre] = useState("SET 1");
   const [nombreCancionExtra, setNombreCancionExtra] = useState("");
   const [duracionCancionExtra, setDuracionCancionExtra] = useState("03:30");
 
-  // Datos del Show y Banda
   const [fecha, setFecha] = useState("");
   const [venue, setVenue] = useState("");
   const [ciudad, setCiudad] = useState("");
@@ -380,22 +375,21 @@ function App() {
 
   const obtenerColorBorde = (item) => {
     if (item.esTextoLibre) return '4px solid #8a8a9e';
-    if (item.esEspecial) return '4px solid #4da6ff';
-    if (item.esCancionExtra) return '4px solid #b388ff'; 
+    if (item.esEspecial) return '4px solid #008dfe';
+    if (item.esCancionExtra) return '4px solid #9030fd'; 
     return 'none';
   };
 
   return (
     <div style={{ padding: '20px', minHeight: '100vh', boxSizing: 'border-box' }}>
       
-      {/* HEADER CON IMAGEN CENTRAL (public/header-logo.png) */}
+      {/* HEADER CON IMAGEN CENTRAL */}
       <header className="app-header">
         <img 
           src="/header-logo.png" 
           alt="Setlist Maker" 
           className="header-banner"
           onError={(e) => {
-            // Fallback en caso de que aún no hayas colocado la imagen en public/
             e.target.style.display = 'none';
             if (!document.getElementById('fallback-title')) {
               const h1 = document.createElement('h1');
@@ -522,8 +516,7 @@ function App() {
             <button 
               type="submit" 
               disabled={cargandoBusqueda}
-              className="btn-pill btn-metallic"
-              style={{ padding: '0 15px', height: '42px', borderRadius: '6px' }}
+              className="btn-action"
             >
               <i className="fa-solid fa-magnifying-glass btn-icon"></i>
             </button>
@@ -542,7 +535,7 @@ function App() {
                     <button
                       key={term}
                       onClick={() => { setBusqueda(term); ejecutarBusqueda(term); }}
-                      style={{ backgroundColor: '#2a2a32', color: '#a0a0c0', border: '1px solid #3f3f4e', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75em', cursor: 'pointer' }}
+                      style={{ backgroundColor: '#2a2a32', color: '#008dfe', border: '1px solid #008dfe', borderRadius: '12px', padding: '4px 10px', fontSize: '0.75em', cursor: 'pointer' }}
                     >
                       {term}
                     </button>
@@ -582,7 +575,7 @@ function App() {
                           <button 
                             onClick={() => agregarAlSetlist(cancion)}
                             title="Agregar al setlist"
-                            style={{ backgroundColor: '#388e3c', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
+                            style={{ backgroundColor: '#008dfe', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
                           >
                             <i className="fa-solid fa-plus"></i>
                           </button>
@@ -678,7 +671,7 @@ function App() {
                               padding: '2px 4px',
                               borderRadius: '3px'
                             }}
-                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #8a8a9e'}
+                            onFocus={(e) => e.target.style.borderBottom = '1px dashed #008dfe'}
                             onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
                             title="Haz clic para editar el nombre"
                           />
@@ -712,7 +705,7 @@ function App() {
                             checked={item.enganchada} 
                             onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
                           />
-                          <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#4CAF50' : '#777' }}>{'>'}</strong>
+                          <strong style={{ fontSize: '1.2em', color: item.enganchada ? '#008dfe' : '#777' }}>{'>'}</strong>
                         </label>
 
                         {item.esEspecial ? (
@@ -763,8 +756,8 @@ function App() {
           <button 
             onClick={() => setMostrarPreview(true)}
             disabled={setlistRenderizado.length === 0}
-            className="btn-pill btn-metallic"
-            style={{ width: '100%', borderRadius: '8px', padding: '12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '1em', marginBottom: '15px', justifyContent: 'center' }}
+            className="btn-action"
+            style={{ width: '100%', padding: '12px', cursor: setlistRenderizado.length > 0 ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '1em', marginBottom: '15px', justifyContent: 'center' }}
           >
             <i className="fa-regular fa-file-pdf btn-icon"></i>
             <span>VISTA PREVIA DEL PDF</span>
@@ -772,7 +765,7 @@ function App() {
 
           <div style={{ backgroundColor: '#141418', padding: '15px', borderRadius: '8px', textAlign: 'center', marginBottom: '15px', border: '1px solid #282832' }}>
             <h3 style={{ margin: '0 0 5px 0', color: '#888', fontSize: '0.85em', textTransform: 'uppercase' }}>Tiempo Total Estimado</h3>
-            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#4CAF50' }}>
+            <div style={{ fontSize: '2em', fontWeight: 'bold', color: '#008dfe' }}>
               {formatearTiempoTotal(tiempoTotalShow)}
             </div>
           </div>
@@ -855,8 +848,8 @@ function App() {
 
             <button 
               onClick={agregarBloqueEspecial}
-              className="btn-pill btn-metallic"
-              style={{ width: '100%', borderRadius: '6px', justifyContent: 'center' }}
+              className="btn-action"
+              style={{ width: '100%', justifyContent: 'center' }}
             >
               <i className="fa-solid fa-plus btn-icon"></i>
               <span>Agregar Bloque</span>
@@ -878,23 +871,24 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Interlineado:</span>
-                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>-</button>
+                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
-                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>+</button>
+                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>+</button>
                 </div>
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid #333340' }}>
                   <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>Fuente:</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>-</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>-</button>
                   <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-pill" style={{ padding: '4px 10px', borderRadius: '4px' }}>+</button>
+                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-action" style={{ padding: '4px 10px', height: 'auto' }}>+</button>
                 </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button 
                   onClick={() => procesarPDF('descargar')}
-                  style={{ backgroundColor: '#388e3c', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9em', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  className="btn-action"
+                  style={{ padding: '8px 16px' }}
                 >
                   <i className="fa-solid fa-download"></i> Descargar PDF
                 </button>
@@ -924,7 +918,7 @@ function App() {
             </div>
 
             <div style={{ textAlign: 'center', fontSize: '0.8em', color: '#aaa' }}>
-              * Si la hoja no se muestra correctamente en tu celular, <a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: '#8a8a9e', textDecoration: 'underline'}}>tocá acá para verla en otra pestaña</a>.
+              * Si la hoja no se muestra correctamente en tu celular, <a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: '#008dfe', textDecoration: 'underline'}}>tocá acá para verla en otra pestaña</a>.
             </div>
 
           </div>
