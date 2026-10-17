@@ -581,12 +581,12 @@ const agruparPorDisco = () => {
       <main className="main-container">
         
         {/* BUSCADOR DE CANCIONES */}
-        <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38', boxSizing: 'border-box', overflow: 'hidden' }}>
+        <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid #2d2d38' }}>
           <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid #333340', paddingBottom: '6px' }}>
             Buscador
           </h2>
           
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '6px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
+          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
             <input 
               type="text" 
               className="custom-input"
@@ -633,7 +633,7 @@ const agruparPorDisco = () => {
               </p>
             ) : (
               discosAgrupados.map((disco) => (
-                <details key={disco.nombreDisco} open style={{ marginBottom: '8px', backgroundColor: '#262630', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333342', maxWidth: '100%' }}>
+                <details key={disco.nombreDisco} open style={{ marginBottom: '8px', backgroundColor: '#262630', borderRadius: '6px', overflow: 'hidden', border: '1px solid #333342' }}>
                   <summary style={{ display: 'flex', alignItems: 'center', padding: '8px 10px', cursor: 'pointer', fontWeight: 'bold', outline: 'none', fontSize: '0.85em', textAlign: 'left', minWidth: 0 }}>
                     <img 
                       src={disco.artwork} 
@@ -653,8 +653,8 @@ const agruparPorDisco = () => {
                       const tituloLimpio = limpiarTituloCancion(cancion.trackName);
                       return (
                         <div key={cancion.trackId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#1e1e26', marginBottom: '4px', padding: '6px 10px', borderRadius: '4px', gap: '6px', minWidth: 0 }}>
-                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2', wordBreak: 'break-word' }}>
+                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
+                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2' }}>
                               {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
                             </strong>
                             <small style={{ color: '#888', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
