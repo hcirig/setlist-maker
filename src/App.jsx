@@ -60,8 +60,8 @@ const translations = {
     songTitleLabel: 'Nombre de la canción:',
     songTitlePlaceholder: 'Ej: Mi Canción',
     durationMmSsLabel: 'Duración (mm:ss):',
-    saveFavoriteBtn: '+ GUARDAR EN REPERTORIO',
-    favoritesEmpty: 'Aún no tienes canciones guardadas en tu repertorio. Agrega temas propios arriba.',
+    saveFavoriteBtn: '+ GUARDAR EN MI REPERTORIO',
+    favoritesEmpty: 'Aún no tienes canciones guardadas en tu repertorio. Agrega temas propios o marca con la estrella ⭐ en el buscador.',
 
     setlistTitle: 'Tu Setlist',
     clearSetlistBtn: 'VACIAR',
@@ -169,7 +169,7 @@ const translations = {
     songTitlePlaceholder: 'e.g. My Song',
     durationMmSsLabel: 'Duration (mm:ss):',
     saveFavoriteBtn: '+ SAVE TO REPERTOIRE',
-    favoritesEmpty: 'No custom songs in your repertoire yet. Add your songs above.',
+    favoritesEmpty: 'No custom songs in your repertoire yet. Add your songs or click the star ⭐ in search.',
 
     setlistTitle: 'Your Setlist',
     clearSetlistBtn: 'CLEAR',
@@ -290,7 +290,7 @@ function App() {
   const [cargandoSetlist, setCargandoSetlist] = useState(false);
 
   // Estados de Canciones Favoritas / Propias
-  const [pestañaCatalogo, setPestañaCatalogo] = useState('buscador'); // 'buscador' | 'favoritos'
+  const [pestañaCatalogo, setPestañaCatalogo] = useState('buscador'); 
   const [cancionesFavoritas, setCancionesFavoritas] = useState([]);
   const [nuevoNombreFav, setNuevoNombreFav] = useState('');
   const [nuevaDuracionFav, setNuevaDuracionFav] = useState('03:30');
@@ -506,7 +506,6 @@ function App() {
         console.error('Error al guardar favorita:', err);
       }
     } else {
-      // Modo invitado o sin banda seleccionada
       const nuevaFav = {
         id: Date.now().toString(),
         nombre: nuevoNombreFav.trim(),
@@ -515,6 +514,48 @@ function App() {
       };
       setCancionesFavoritas([...cancionesFavoritas, nuevaFav]);
       setNuevoNombreFav('');
+    }
+  };
+
+  // Alternar favorita desde el buscador de iTunes (⭐)
+  const toggleFavoritoItunes = async (cancion) => {
+    const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+    const duracionSegs = Math.round((cancion.trackTimeMillis || 0) / 1000);
+
+    const existente = cancionesFavoritas.find(f => f.nombre.toLowerCase() === tituloLimpio.toLowerCase());
+
+    if (existente) {
+      await eliminarCancionFavorita(existente.id);
+    } else {
+      if (user && bandaSeleccionadaId !== 'nueva') {
+        try {
+          const { data, error } = await supabase
+            .from('canciones_favoritas')
+            .insert({
+              user_id: user.id,
+              banda_id: bandaSeleccionadaId,
+              nombre: tituloLimpio,
+              duracion: duracionSegs,
+              es_propia: false
+            })
+            .select()
+            .single();
+
+          if (!error && data) {
+            setCancionesFavoritas([...cancionesFavoritas, data]);
+          }
+        } catch (err) {
+          console.error('Error guardando favorita iTunes:', err);
+        }
+      } else {
+        const nuevaFav = {
+          id: Date.now().toString(),
+          nombre: tituloLimpio,
+          duracion: duracionSegs,
+          es_propia: false
+        };
+        setCancionesFavoritas([...cancionesFavoritas, nuevaFav]);
+      }
     }
   };
 
@@ -1054,7 +1095,6 @@ function App() {
         justifyContent: 'space-between'
       }}
     >
-      {/* Bloque Superior e Intermedio */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         
         {/* Encabezado A4: Logo Izquierda | Info Derecha */}
@@ -1138,7 +1178,6 @@ function App() {
 
       </div>
 
-      {/* Pie de Hoja A4 fijo al fondo */}
       <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px', minHeight: '20px' }}>
         {contactoRedes.trim()}
       </div>
@@ -1172,7 +1211,6 @@ function App() {
             </button>
           </div>
 
-          {/* Menú de Autenticación / Usuario */}
           {session ? (
             <div className="user-menu-container">
               <button 
@@ -1425,7 +1463,6 @@ function App() {
         {/* BUSCADOR DE CANCIONES Y MIS CANCIONES */}
         <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', boxSizing: 'border-box', overflow: 'hidden' }}>
           
-          {/* Pestañas de Navegación del Catálogo */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
             <button 
               onClick={() => setPestañaCatalogo('buscador')}
@@ -1512,6 +1549,8 @@ function App() {
                       <div style={{ padding: '0 8px 8px 8px' }}>
                         {disco.canciones.map((cancion) => {
                           const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+                          const esFavorito = cancionesFavoritas.some(f => f.nombre.toLowerCase() === tituloLimpio.toLowerCase());
+
                           return (
                             <div key={cancion.trackId} className="cancion-item">
                               <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
@@ -1522,13 +1561,24 @@ function App() {
                                   {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
                                 </small>
                               </div>
-                              <button 
-                                onClick={() => agregarAlSetlist(cancion)}
-                                title="Agregar al setlist"
-                                style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
-                              >
-                                <i className="fa-solid fa-plus"></i>
-                              </button>
+                              
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                <button 
+                                  onClick={() => toggleFavoritoItunes(cancion)}
+                                  title={esFavorito ? "Quitar de mis canciones" : "Guardar en mis canciones"}
+                                  style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1em', padding: '2px 4px' }}
+                                >
+                                  {esFavorito ? '⭐' : '☆'}
+                                </button>
+                                
+                                <button 
+                                  onClick={() => agregarAlSetlist(cancion)}
+                                  title="Agregar al setlist"
+                                  style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
+                                >
+                                  <i className="fa-solid fa-plus"></i>
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
@@ -1540,30 +1590,43 @@ function App() {
             </>
           ) : (
             <>
-              {/* Formulario para agregar canciones propias fuera de catálogo */}
-              <form onSubmit={agregarCancionFavorita} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px', backgroundColor: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
+              {/* Formulario Reestructurado: Inputs arriba y Botón Ancho en la fila siguiente */}
+              <form onSubmit={agregarCancionFavorita} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px', backgroundColor: 'var(--input-bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
                 <span style={{ fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text-main)' }}>{t.addFavoriteTitle}</span>
-                <input 
-                  type="text"
-                  className="custom-input"
-                  placeholder={t.songTitlePlaceholder}
-                  value={nuevoNombreFav}
-                  onChange={(e) => setNuevoNombreFav(e.target.value)}
-                  style={{ width: '100%' }}
-                />
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <input 
-                    type="text"
-                    className="custom-input"
-                    placeholder="03:30"
-                    value={nuevaDuracionFav}
-                    onChange={(e) => setNuevaDuracionFav(e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <button type="submit" className="btn-pill" style={{ height: '36px', padding: '0 12px', fontSize: '0.8em' }}>
-                    {t.saveFavoriteBtn}
-                  </button>
+                
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 2, minWidth: '130px' }}>
+                    <input 
+                      type="text"
+                      className="custom-input"
+                      placeholder={t.songTitlePlaceholder}
+                      value={nuevoNombreFav}
+                      onChange={(e) => setNuevoNombreFav(e.target.value)}
+                      style={{ width: '100%' }}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: '70px' }}>
+                    <input 
+                      type="text"
+                      className="custom-input"
+                      placeholder="03:30"
+                      value={nuevaDuracionFav}
+                      onChange={(e) => setNuevaDuracionFav(e.target.value)}
+                      style={{ width: '100%', textAlign: 'center' }}
+                    />
+                  </div>
                 </div>
+
+                <button 
+                  type="submit" 
+                  disabled={!nuevoNombreFav.trim()}
+                  className="btn-pill" 
+                  style={{ width: '100%', justifyContent: 'center', height: '36px', fontSize: '0.8em', opacity: nuevoNombreFav.trim() ? 1 : 0.6 }}
+                >
+                  <i className="fa-solid fa-plus btn-icon"></i>
+                  <span>{t.saveFavoriteBtn}</span>
+                </button>
               </form>
 
               {/* Lista de Canciones Guardadas */}
@@ -1938,7 +2001,7 @@ function App() {
 
       </main>
 
-      {/* POPUP / MODAL DE VISTA PREVIA CON HOJA A4 CON FLEX-COLUMN */}
+      {/* POPUP / MODAL DE VISTA PREVIA */}
       {mostrarPreview && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
           
