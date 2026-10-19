@@ -61,7 +61,7 @@ const translations = {
     songTitlePlaceholder: 'Ej: Mi Canción',
     durationMmSsLabel: 'Duración (mm:ss):',
     saveFavoriteBtn: '+ GUARDAR EN MI REPERTORIO',
-    favoritesEmpty: 'Aún no tienes canciones guardadas en tu repertorio. Agrega temas propios o marca con la estrella ⭐ en el buscador.',
+    favoritesEmpty: 'Aún no tienes canciones guardadas en tu repertorio. Agrega temas propios o marca con la estrella ⭐ en el buscador o setlist.',
 
     setlistTitle: 'Tu Setlist',
     clearSetlistBtn: 'VACIAR',
@@ -169,7 +169,7 @@ const translations = {
     songTitlePlaceholder: 'e.g. My Song',
     durationMmSsLabel: 'Duration (mm:ss):',
     saveFavoriteBtn: '+ SAVE TO REPERTOIRE',
-    favoritesEmpty: 'No custom songs in your repertoire yet. Add your songs or click the star ⭐ in search.',
+    favoritesEmpty: 'No custom songs in your repertoire yet. Add your songs or click the star ⭐ in search or setlist.',
 
     setlistTitle: 'Your Setlist',
     clearSetlistBtn: 'CLEAR',
@@ -517,10 +517,10 @@ function App() {
     }
   };
 
-  // Alternar favorita desde el buscador de iTunes (⭐)
-  const toggleFavoritoItunes = async (cancion) => {
-    const tituloLimpio = limpiarTituloCancion(cancion.trackName);
-    const duracionSegs = Math.round((cancion.trackTimeMillis || 0) / 1000);
+  // Alternar favorita indicando título y duración
+  const toggleFavoritoDirecto = async (nombreCancion, duracionSegundos = 210) => {
+    const tituloLimpio = limpiarTituloCancion(nombreCancion);
+    if (!tituloLimpio) return;
 
     const existente = cancionesFavoritas.find(f => f.nombre.toLowerCase() === tituloLimpio.toLowerCase());
 
@@ -535,7 +535,7 @@ function App() {
               user_id: user.id,
               banda_id: bandaSeleccionadaId,
               nombre: tituloLimpio,
-              duracion: duracionSegs,
+              duracion: duracionSegundos,
               es_propia: false
             })
             .select()
@@ -545,13 +545,13 @@ function App() {
             setCancionesFavoritas([...cancionesFavoritas, data]);
           }
         } catch (err) {
-          console.error('Error guardando favorita iTunes:', err);
+          console.error('Error guardando favorita:', err);
         }
       } else {
         const nuevaFav = {
           id: Date.now().toString(),
           nombre: tituloLimpio,
-          duracion: duracionSegs,
+          duracion: duracionSegundos,
           es_propia: false
         };
         setCancionesFavoritas([...cancionesFavoritas, nuevaFav]);
@@ -582,13 +582,25 @@ function App() {
       setVenue('');
       setCiudad('');
       setGap(15);
+      setEspaciadoPdf(18);
+      setTamanoFuentePdf(28);
     } else {
       setSetlistSeleccionadoId(setlistObj.id);
       setFecha(setlistObj.fecha || '');
       setVenue(setlistObj.venue || '');
       setCiudad(setlistObj.ciudad || '');
       setGap(setlistObj.gap || 15);
-      setSetlist(Array.isArray(setlistObj.contenido) ? setlistObj.contenido : []);
+      
+      const contenidoData = setlistObj.contenido;
+      if (Array.isArray(contenidoData)) {
+        setSetlist(contenidoData);
+      } else if (contenidoData && typeof contenidoData === 'object') {
+        setSetlist(Array.isArray(contenidoData.items) ? contenidoData.items : []);
+        if (contenidoData.espaciadoPdf !== undefined) setEspaciadoPdf(contenidoData.espaciadoPdf);
+        if (contenidoData.tamanoFuentePdf !== undefined) setTamanoFuentePdf(contenidoData.tamanoFuentePdf);
+      } else {
+        setSetlist([]);
+      }
     }
   };
 
@@ -610,6 +622,12 @@ function App() {
       if (nombreIngresado.trim()) nombreShowFinal = nombreIngresado.trim();
     }
 
+    const estructuraContenidoGuardar = {
+      items: setlist,
+      espaciadoPdf: espaciadoPdf,
+      tamanoFuentePdf: tamanoFuentePdf
+    };
+
     setCargandoSetlist(true);
     try {
       if (!esGuardarComo && setlistSeleccionadoId !== 'nuevo') {
@@ -621,7 +639,7 @@ function App() {
             venue: venue.trim(),
             ciudad: ciudad.trim(),
             gap: Number(gap),
-            contenido: setlist
+            contenido: estructuraContenidoGuardar
           })
           .eq('id', setlistSeleccionadoId)
           .eq('user_id', user.id);
@@ -644,7 +662,7 @@ function App() {
             venue: venue.trim(),
             ciudad: ciudad.trim(),
             gap: Number(gap),
-            contenido: setlist
+            contenido: estructuraContenidoGuardar
           })
           .select()
           .single();
@@ -1550,6 +1568,7 @@ function App() {
                         {disco.canciones.map((cancion) => {
                           const tituloLimpio = limpiarTituloCancion(cancion.trackName);
                           const esFavorito = cancionesFavoritas.some(f => f.nombre.toLowerCase() === tituloLimpio.toLowerCase());
+                          const duracionSegs = Math.round((cancion.trackTimeMillis || 0) / 1000);
 
                           return (
                             <div key={cancion.trackId} className="cancion-item">
@@ -1558,15 +1577,15 @@ function App() {
                                   {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
                                 </strong>
                                 <small style={{ color: 'var(--text-muted)', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
-                                  {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
+                                  {formatearTiempo(duracionSegs)}
                                 </small>
                               </div>
                               
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <button 
-                                  onClick={() => toggleFavoritoItunes(cancion)}
+                                  onClick={() => toggleFavoritoDirecto(tituloLimpio, duracionSegs)}
                                   title={esFavorito ? "Quitar de mis canciones" : "Guardar en mis canciones"}
-                                  style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.1em', padding: '2px 4px' }}
+                                  style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2em', padding: '2px 4px' }}
                                 >
                                   {esFavorito ? '⭐' : '☆'}
                                 </button>
@@ -1590,7 +1609,7 @@ function App() {
             </>
           ) : (
             <>
-              {/* Formulario Reestructurado: Inputs arriba y Botón Ancho en la fila siguiente */}
+              {/* Formulario Reestructurado */}
               <form onSubmit={agregarCancionFavorita} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px', backgroundColor: 'var(--input-bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
                 <span style={{ fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text-main)' }}>{t.addFavoriteTitle}</span>
                 
@@ -1694,147 +1713,162 @@ function App() {
             <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '0.9em' }}>{t.setlistEmpty}</p>
           ) : (
             <div className="scroll-area">
-              {setlistRenderizado.map((item, index) => (
-                <div 
-                  key={item.idSetlist}
-                  draggable
-                  onDragStart={(e) => (dragItem.current = index)}
-                  onDragEnter={(e) => (dragOverItem.current = index)}
-                  onDragEnd={handleSort}
-                  onDragOver={(e) => e.preventDefault()}
-                  style={{ 
-                    backgroundColor: obtenerColorFondo(item), 
-                    marginBottom: '8px', 
-                    padding: '10px', 
-                    borderRadius: '6px', 
-                    display: 'flex', 
-                    flexDirection: 'column',
-                    gap: '10px',
-                    cursor: 'grab',
-                    borderLeft: obtenerColorBorde(item),
-                    textAlign: item.esTextoLibre ? 'center' : 'left'
-                  }}
-                >
-                  
-                  {item.esTextoLibre ? (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                      <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab', paddingRight: '10px' }}></i>
-                      <input 
-                        type="text" 
-                        value={item.nombre} 
-                        onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
-                        style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1em', backgroundColor: 'transparent', border: 'none', color: 'var(--text-main)', borderBottom: '1px dashed var(--text-muted)' }}
-                      />
-                      <button 
-                        onClick={() => eliminarDelSetlist(item.idSetlist)}
-                        className="btn-danger-round"
-                        title={t.removeTooltip}
-                        style={{ marginLeft: '10px' }}
-                      >
-                        -
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '200px' }}>
-                          <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab' }}></i>
-                          <span style={{ fontWeight: 'bold', fontSize: '1em', color: 'var(--text-main)' }}>
-                            {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)}
-                            {item.esEspecial && '🎭 '}
-                          </span>
-                          <input 
-                            type="text" 
-                            value={item.nombre} 
-                            onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
-                            style={{ 
-                              flex: 1, 
-                              fontWeight: 'bold', 
-                              fontSize: '1em', 
-                              backgroundColor: 'transparent', 
-                              border: 'none', 
-                              color: 'var(--text-main)', 
-                              borderBottom: '1px solid transparent',
-                              padding: '2px 4px',
-                              borderRadius: '3px'
-                            }}
-                            onFocus={(e) => e.target.style.borderBottom = '1px dashed var(--btn-blue)'}
-                            onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
-                            title={t.editNameTooltip}
-                          />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
-                          <button 
-                            onClick={() => eliminarDelSetlist(item.idSetlist)}
-                            className="btn-danger-round"
-                            title={t.removeTooltip}
-                          >
-                            -
-                          </button>
-                        </div>
-                      </div>
+              {setlistRenderizado.map((item, index) => {
+                const esFavorito = !item.esEspecial && !item.esTextoLibre && cancionesFavoritas.some(f => f.nombre.toLowerCase() === item.nombre.toLowerCase());
 
-                      <div className="controles-cancion">
-                        {!item.esEspecial && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.tapeTooltip}>
-                            <input 
-                              type="checkbox" 
-                              checked={item.esTape} 
-                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'esTape', e.target.checked)} 
-                            />
-                            <span>📼</span>
-                          </label>
-                        )}
-                        
-                        {!item.esEspecial && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.segueTooltip}>
-                            <input 
-                              type="checkbox" 
-                              checked={item.enganchada} 
-                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
-                            />
-                            <strong style={{ fontSize: '1.2em', color: item.enganchada ? 'var(--btn-blue)' : 'var(--text-muted)' }}>{'>'}</strong>
-                          </label>
-                        )}
-
-                        {item.esEspecial ? (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
-                            {t.durationLabel}
-                            <input 
-                              type="number" 
-                              value={item.duracionBase / 60} 
-                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'duracionBase', Number(e.target.value) * 60)}
-                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
-                            />
-                            <span>{t.minLabel}</span>
-                          </label>
-                        ) : (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
-                            {t.addLabel}
-                            <input 
-                              type="number" 
-                              value={item.tiempoExtra} 
-                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'tiempoExtra', e.target.value)}
-                              style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
-                            />
-                            <span>{t.secLabel}</span>
-                          </label>
-                        )}
-
+                return (
+                  <div 
+                    key={item.idSetlist}
+                    draggable
+                    onDragStart={(e) => (dragItem.current = index)}
+                    onDragEnter={(e) => (dragOverItem.current = index)}
+                    onDragEnd={handleSort}
+                    onDragOver={(e) => e.preventDefault()}
+                    style={{ 
+                      backgroundColor: obtenerColorFondo(item), 
+                      marginBottom: '8px', 
+                      padding: '10px', 
+                      borderRadius: '6px', 
+                      display: 'flex', 
+                      flexDirection: 'column',
+                      gap: '10px',
+                      cursor: 'grab',
+                      borderLeft: obtenerColorBorde(item),
+                      textAlign: item.esTextoLibre ? 'center' : 'left'
+                    }}
+                  >
+                    
+                    {item.esTextoLibre ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                        <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab', paddingRight: '10px' }}></i>
                         <input 
                           type="text" 
-                          placeholder={t.notesPlaceholder} 
-                          value={item.notas} 
-                          onChange={(e) => actualizarItemSetlist(item.idSetlist, 'notas', e.target.value)}
-                          style={{ flex: '1', minWidth: '100px', padding: '4px 8px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
+                          value={item.nombre} 
+                          onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
+                          style={{ flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: '1.1em', backgroundColor: 'transparent', border: 'none', color: 'var(--text-main)', borderBottom: '1px dashed var(--text-muted)' }}
                         />
+                        <button 
+                          onClick={() => eliminarDelSetlist(item.idSetlist)}
+                          className="btn-danger-round"
+                          title={t.removeTooltip}
+                          style={{ marginLeft: '10px' }}
+                        >
+                          -
+                        </button>
                       </div>
-                    </>
-                  )}
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', minWidth: '200px' }}>
+                            <i className="fa-solid fa-grip-lines" style={{ color: 'var(--text-muted)', cursor: 'grab' }}></i>
+                            <span style={{ fontWeight: 'bold', fontSize: '1em', color: 'var(--text-main)' }}>
+                              {!item.esEspecial && (item.esTape ? '📼 ' : `${item.trackNumero}. `)}
+                              {item.esEspecial && '🎭 '}
+                            </span>
+                            <input 
+                              type="text" 
+                              value={item.nombre} 
+                              onChange={(e) => actualizarItemSetlist(item.idSetlist, 'nombre', e.target.value)}
+                              style={{ 
+                                flex: 1, 
+                                fontWeight: 'bold', 
+                                fontSize: '1em', 
+                                backgroundColor: 'transparent', 
+                                border: 'none', 
+                                color: 'var(--text-main)', 
+                                borderBottom: '1px solid transparent',
+                                padding: '2px 4px',
+                                borderRadius: '3px'
+                              }}
+                              onFocus={(e) => e.target.style.borderBottom = '1px dashed var(--btn-blue)'}
+                              onBlur={(e) => e.target.style.borderBottom = '1px solid transparent'}
+                              title={t.editNameTooltip}
+                            />
+                          </div>
 
-                </div>
-              ))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {!item.esEspecial && (
+                              <button 
+                                onClick={() => toggleFavoritoDirecto(item.nombre, item.duracionBase)}
+                                title={esFavorito ? "Quitar de mis canciones" : "Guardar en mis canciones"}
+                                style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2em', padding: '0 2px' }}
+                              >
+                                {esFavorito ? '⭐' : '☆'}
+                              </button>
+                            )}
+
+                            <span style={{ fontSize: '0.85em', color: 'var(--text-muted)' }}>{formatearTiempo(item.duracionBase + Number(item.tiempoExtra))}</span>
+                            <button 
+                              onClick={() => eliminarDelSetlist(item.idSetlist)}
+                              className="btn-danger-round"
+                              title={t.removeTooltip}
+                            >
+                              -
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="controles-cancion">
+                          {!item.esEspecial && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.tapeTooltip}>
+                              <input 
+                                type="checkbox" 
+                                checked={item.esTape} 
+                                onChange={(e) => actualizarItemSetlist(item.idSetlist, 'esTape', e.target.checked)} 
+                              />
+                              <span>📼</span>
+                            </label>
+                          )}
+                          
+                          {!item.esEspecial && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: 'var(--text-main)' }} title={t.segueTooltip}>
+                              <input 
+                                type="checkbox" 
+                                checked={item.enganchada} 
+                                onChange={(e) => actualizarItemSetlist(item.idSetlist, 'enganchada', e.target.checked)} 
+                              />
+                              <strong style={{ fontSize: '1.2em', color: item.enganchada ? 'var(--btn-blue)' : 'var(--text-muted)' }}>{'>'}</strong>
+                            </label>
+                          )}
+
+                          {item.esEspecial ? (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
+                              {t.durationLabel}
+                              <input 
+                                type="number" 
+                                value={item.duracionBase / 60} 
+                                onChange={(e) => actualizarItemSetlist(item.idSetlist, 'duracionBase', Number(e.target.value) * 60)}
+                                style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
+                              />
+                              <span>{t.minLabel}</span>
+                            </label>
+                          ) : (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-main)' }}>
+                              {t.addLabel}
+                              <input 
+                                type="number" 
+                                value={item.tiempoExtra} 
+                                onChange={(e) => actualizarItemSetlist(item.idSetlist, 'tiempoExtra', e.target.value)}
+                                style={{ width: '45px', padding: '3px 6px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
+                              />
+                              <span>{t.secLabel}</span>
+                            </label>
+                          )}
+
+                          <input 
+                            type="text" 
+                            placeholder={t.notesPlaceholder} 
+                            value={item.notas} 
+                            onChange={(e) => actualizarItemSetlist(item.idSetlist, 'notas', e.target.value)}
+                            style={{ flex: '1', minWidth: '100px', padding: '4px 8px', borderRadius: '3px', border: '1px solid var(--input-border)', fontSize: '1em', backgroundColor: 'var(--input-bg)', color: 'var(--text-main)' }}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
