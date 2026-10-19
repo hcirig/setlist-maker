@@ -47,12 +47,21 @@ const translations = {
     cityPlaceholder: 'Ej: Buenos Aires, Argentina',
 
     searchTitle: 'Buscador',
+    tabSearch: 'BUSCADOR',
+    tabFavorites: 'MIS CANCIONES',
     searchPlaceholder: 'Artista, canción...',
     clearSearch: 'Limpiar buscador',
     searchSearching: 'Buscando canciones... 🎵',
     searchError: 'No se pudieron obtener resultados. Revisa tu conexión.',
     searchEmpty: 'Escribe el nombre de un artista o canción arriba para buscar...',
     singlesVarious: 'Sencillos / Varios',
+
+    addFavoriteTitle: 'Agregar Tema Propio',
+    songTitleLabel: 'Nombre de la canción:',
+    songTitlePlaceholder: 'Ej: Mi Canción',
+    durationMmSsLabel: 'Duración (mm:ss):',
+    saveFavoriteBtn: '+ GUARDAR EN REPERTORIO',
+    favoritesEmpty: 'Aún no tienes canciones guardadas en tu repertorio. Agrega temas propios arriba.',
 
     setlistTitle: 'Tu Setlist',
     clearSetlistBtn: 'VACIAR',
@@ -79,9 +88,6 @@ const translations = {
     customSongOption: 'Canción (Fuera de catálogo)',
     textToShowLabel: 'Texto a mostrar:',
     textToShowPlaceholder: 'Ej: SET 1',
-    songTitleLabel: 'Nombre de la canción:',
-    songTitlePlaceholder: 'Ej: Song Title',
-    durationMmSsLabel: 'Duración (mm:ss):',
     addSpecialRowBtn: '+ FILA',
     totalEstimatedTime: 'Tiempo Total Estimado',
     exportBtn: 'EXPORTAR',
@@ -149,12 +155,21 @@ const translations = {
     cityPlaceholder: 'e.g. London, UK',
 
     searchTitle: 'Search',
+    tabSearch: 'SEARCH',
+    tabFavorites: 'MY SONGS',
     searchPlaceholder: 'Artist, song...',
     clearSearch: 'Clear search',
     searchSearching: 'Searching songs... 🎵',
     searchError: 'Could not fetch results. Check your connection.',
     searchEmpty: 'Type an artist or song name above to search...',
     singlesVarious: 'Singles / Various',
+
+    addFavoriteTitle: 'Add Custom Song',
+    songTitleLabel: 'Song title:',
+    songTitlePlaceholder: 'e.g. My Song',
+    durationMmSsLabel: 'Duration (mm:ss):',
+    saveFavoriteBtn: '+ SAVE TO REPERTOIRE',
+    favoritesEmpty: 'No custom songs in your repertoire yet. Add your songs above.',
 
     setlistTitle: 'Your Setlist',
     clearSetlistBtn: 'CLEAR',
@@ -181,9 +196,6 @@ const translations = {
     customSongOption: 'Song (Custom)',
     textToShowLabel: 'Text to show:',
     textToShowPlaceholder: 'e.g. SET 1',
-    songTitleLabel: 'Song title:',
-    songTitlePlaceholder: 'e.g. Song Title',
-    durationMmSsLabel: 'Duration (mm:ss):',
     addSpecialRowBtn: '+ ROW',
     totalEstimatedTime: 'Estimated Total Time',
     exportBtn: 'EXPORT',
@@ -277,6 +289,12 @@ function App() {
   const [setlistSeleccionadoId, setSetlistSeleccionadoId] = useState('nuevo');
   const [cargandoSetlist, setCargandoSetlist] = useState(false);
 
+  // Estados de Canciones Favoritas / Propias
+  const [pestañaCatalogo, setPestañaCatalogo] = useState('buscador'); // 'buscador' | 'favoritos'
+  const [cancionesFavoritas, setCancionesFavoritas] = useState([]);
+  const [nuevoNombreFav, setNuevoNombreFav] = useState('');
+  const [nuevaDuracionFav, setNuevaDuracionFav] = useState('03:30');
+
   const bandasInicializadasRef = useRef(false);
 
   const [busqueda, setBusqueda] = useState('');
@@ -361,12 +379,14 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Cargar setlists al cambiar la banda seleccionada o la sesión
+  // Cargar setlists y favoritas al cambiar la banda seleccionada
   useEffect(() => {
     if (user && bandaSeleccionadaId && bandaSeleccionadaId !== 'nueva') {
       cargarSetlistsBanda(bandaSeleccionadaId);
+      cargarCancionesFavoritas(bandaSeleccionadaId);
     } else {
       setMisSetlists([]);
+      setCancionesFavoritas([]);
       setSetlistSeleccionadoId('nuevo');
     }
   }, [bandaSeleccionadaId, user]);
@@ -404,6 +424,7 @@ function App() {
       setLogoUrl(null);
       setArchivoLogo(null);
       setMisSetlists([]);
+      setCancionesFavoritas([]);
       seleccionarSetlist('nuevo');
     } else {
       setBandaSeleccionadaId(banda.id);
@@ -432,6 +453,84 @@ function App() {
     } catch (err) {
       console.error('Error cargando setlists:', err);
     }
+  };
+
+  const cargarCancionesFavoritas = async (bandaId) => {
+    if (!bandaId || bandaId === 'nueva' || !user) return;
+    try {
+      const { data, error } = await supabase
+        .from('canciones_favoritas')
+        .select('*')
+        .eq('banda_id', bandaId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setCancionesFavoritas(data);
+      }
+    } catch (err) {
+      console.error('Error cargando favoritas:', err);
+    }
+  };
+
+  const agregarCancionFavorita = async (e) => {
+    e?.preventDefault();
+    if (!nuevoNombreFav.trim()) return;
+
+    const partes = nuevaDuracionFav.split(':');
+    let segs = 210;
+    if (partes.length === 2) {
+      segs = (parseInt(partes[0]) || 0) * 60 + (parseInt(partes[1]) || 0);
+    } else {
+      segs = parseInt(partes[0]) || 210;
+    }
+
+    if (user && bandaSeleccionadaId !== 'nueva') {
+      try {
+        const { data, error } = await supabase
+          .from('canciones_favoritas')
+          .insert({
+            user_id: user.id,
+            banda_id: bandaSeleccionadaId,
+            nombre: nuevoNombreFav.trim(),
+            duracion: segs,
+            es_propia: true
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          setCancionesFavoritas([...cancionesFavoritas, data]);
+          setNuevoNombreFav('');
+        }
+      } catch (err) {
+        console.error('Error al guardar favorita:', err);
+      }
+    } else {
+      // Modo invitado o sin banda seleccionada
+      const nuevaFav = {
+        id: Date.now().toString(),
+        nombre: nuevoNombreFav.trim(),
+        duracion: segs,
+        es_propia: true
+      };
+      setCancionesFavoritas([...cancionesFavoritas, nuevaFav]);
+      setNuevoNombreFav('');
+    }
+  };
+
+  const eliminarCancionFavorita = async (idFav) => {
+    if (user && bandaSeleccionadaId !== 'nueva') {
+      try {
+        await supabase
+          .from('canciones_favoritas')
+          .delete()
+          .eq('id', idFav)
+          .eq('user_id', user.id);
+      } catch (err) {
+        console.error('Error eliminando favorita:', err);
+      }
+    }
+    setCancionesFavoritas(cancionesFavoritas.filter(f => f.id !== idFav));
   };
 
   const seleccionarSetlist = (setlistObj) => {
@@ -756,15 +855,15 @@ function App() {
   const discosAgrupados = agruparPorDisco();
 
   const agregarAlSetlist = (cancion) => {
-    const duracionSegundos = Math.round((cancion.trackTimeMillis || 0) / 1000);
-    const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+    const duracionSegundos = cancion.duracion ? cancion.duracion : Math.round((cancion.trackTimeMillis || 0) / 1000);
+    const tituloLimpio = cancion.nombre || limpiarTituloCancion(cancion.trackName);
 
     const nuevaEjecucion = {
       idSetlist: Date.now().toString() + Math.random().toString(36).substring(2, 5),
-      id: cancion.trackId,
+      id: cancion.id || cancion.trackId,
       nombre: tituloLimpio,
       disco: cancion.collectionName || 'Sin Álbum',
-      artista: cancion.artistName,
+      artista: cancion.artistName || '',
       track: cancion.trackNumber,
       duracionBase: duracionSegundos,
       duracion: duracionSegundos,
@@ -1006,12 +1105,14 @@ function App() {
                     {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
                   </div>
                   
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '12px', minWidth: 0 }}>
                     <span style={{ 
                       fontSize: `${tamanoFuentePdf}px`, 
                       fontWeight: item.esEspecial ? 'normal' : 'bold', 
                       textTransform: item.esEspecial ? 'none' : 'uppercase', 
-                      fontStyle: item.esEspecial ? 'italic' : 'normal' 
+                      fontStyle: item.esEspecial ? 'italic' : 'normal',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere'
                     }}>
                       {item.nombre} {item.enganchada && '>'}
                     </span>
@@ -1021,7 +1122,9 @@ function App() {
                         fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
                         color: '#555', 
                         fontStyle: 'italic',
-                        fontWeight: 'normal'
+                        fontWeight: 'normal',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere'
                       }}>
                         ({item.notas})
                       </span>
@@ -1319,102 +1422,191 @@ function App() {
       {/* ÁREA PRINCIPAL */}
       <main className="main-container">
         
-        {/* BUSCADOR DE CANCIONES */}
+        {/* BUSCADOR DE CANCIONES Y MIS CANCIONES */}
         <section id="sec-buscador" className="columna-catalogo" style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', border: '1px solid var(--border-color)', boxSizing: 'border-box', overflow: 'hidden' }}>
-          <h2 style={{ fontSize: '1.1em', marginTop: '0', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-main)', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
-            {t.searchTitle}
-          </h2>
           
-          <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
-            <input 
-              type="text" 
-              className="custom-input"
-              placeholder={t.searchPlaceholder} 
-              value={busqueda} 
-              onChange={(e) => {
-                setBusqueda(e.target.value);
-                if (!e.target.value.trim()) {
-                  setResultados([]);
-                }
-              }}
-              style={{ flex: 1, minWidth: 0 }}
-            />
+          {/* Pestañas de Navegación del Catálogo */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
             <button 
-              type="submit" 
-              disabled={cargandoBusqueda}
-              className="btn-round"
-              title={t.searchTitle}
+              onClick={() => setPestañaCatalogo('buscador')}
+              className="btn-pill"
+              style={{ flex: 1, justifyContent: 'center', backgroundColor: pestañaCatalogo === 'buscador' ? 'var(--btn-blue)' : 'transparent', color: pestañaCatalogo === 'buscador' ? '#fff' : 'var(--text-main)', border: '1px solid var(--input-border)', fontSize: '0.8em' }}
             >
               <i className="fa-solid fa-magnifying-glass btn-icon"></i>
+              <span>{t.tabSearch}</span>
             </button>
-
-            {(busqueda || resultados.length > 0) && (
-              <button 
-                type="button" 
-                onClick={limpiarBusqueda}
-                className="btn-danger-round"
-                style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
-                title={t.clearSearch}
-              >
-                ✕
-              </button>
-            )}
-          </form>
-
-          <div className="scroll-area">
-            {cargandoBusqueda ? (
-              <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>{t.searchSearching}</p>
-            ) : errorBusqueda ? (
-              <p style={{ color: 'var(--btn-danger)', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
-            ) : resultados.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
-                {t.searchEmpty}
-              </p>
-            ) : (
-              discosAgrupados.map((disco) => (
-                <details key={disco.nombreDisco} open className="disco-details">
-                  <summary className="disco-summary">
-                    <img 
-                      src={disco.artwork} 
-                      alt={disco.nombreDisco} 
-                      style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '4px', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }} 
-                      onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
-                    />
-                    <div style={{ flex: '1', minWidth: 0, overflow: 'hidden' }}>
-                      <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>{disco.nombreDisco}</div>
-                      <small className="disco-artist-sub">
-                        {disco.artista} {disco.anio ? `• ${disco.anio}` : ''}
-                      </small>
-                    </div>
-                  </summary>
-                  <div style={{ padding: '0 8px 8px 8px' }}>
-                    {disco.canciones.map((cancion) => {
-                      const tituloLimpio = limpiarTituloCancion(cancion.trackName);
-                      return (
-                        <div key={cancion.trackId} className="cancion-item">
-                          <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
-                            <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2', color: 'var(--text-main)' }}>
-                              {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
-                            </strong>
-                            <small style={{ color: 'var(--text-muted)', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
-                              {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
-                            </small>
-                          </div>
-                          <button 
-                            onClick={() => agregarAlSetlist(cancion)}
-                            title="Agregar al setlist"
-                            style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
-                          >
-                            <i className="fa-solid fa-plus"></i>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </details>
-              ))
-            )}
+            <button 
+              onClick={() => setPestañaCatalogo('favoritos')}
+              className="btn-pill"
+              style={{ flex: 1, justifyContent: 'center', backgroundColor: pestañaCatalogo === 'favoritos' ? 'var(--btn-blue)' : 'transparent', color: pestañaCatalogo === 'favoritos' ? '#fff' : 'var(--text-main)', border: '1px solid var(--input-border)', fontSize: '0.8em' }}
+            >
+              <i className="fa-solid fa-star btn-icon"></i>
+              <span>{t.tabFavorites}</span>
+            </button>
           </div>
+
+          {pestañaCatalogo === 'buscador' ? (
+            <>
+              <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  className="custom-input"
+                  placeholder={t.searchPlaceholder} 
+                  value={busqueda} 
+                  onChange={(e) => {
+                    setBusqueda(e.target.value);
+                    if (!e.target.value.trim()) {
+                      setResultados([]);
+                    }
+                  }}
+                  style={{ flex: 1, minWidth: 0 }}
+                />
+                <button 
+                  type="submit" 
+                  disabled={cargandoBusqueda}
+                  className="btn-round"
+                  title={t.searchTitle}
+                >
+                  <i className="fa-solid fa-magnifying-glass btn-icon"></i>
+                </button>
+
+                {(busqueda || resultados.length > 0) && (
+                  <button 
+                    type="button" 
+                    onClick={limpiarBusqueda}
+                    className="btn-danger-round"
+                    style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
+                    title={t.clearSearch}
+                  >
+                    ✕
+                  </button>
+                )}
+              </form>
+
+              <div className="scroll-area">
+                {cargandoBusqueda ? (
+                  <p style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>{t.searchSearching}</p>
+                ) : errorBusqueda ? (
+                  <p style={{ color: 'var(--btn-danger)', textAlign: 'center', padding: '10px 0', fontSize: '0.85em' }}>{errorBusqueda}</p>
+                ) : resultados.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
+                    {t.searchEmpty}
+                  </p>
+                ) : (
+                  discosAgrupados.map((disco) => (
+                    <details key={disco.nombreDisco} open className="disco-details">
+                      <summary className="disco-summary">
+                        <img 
+                          src={disco.artwork} 
+                          alt={disco.nombreDisco} 
+                          style={{ width: '32px', height: '32px', marginRight: '10px', borderRadius: '4px', objectFit: 'cover', backgroundColor: '#111', flexShrink: 0 }} 
+                          onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                        />
+                        <div style={{ flex: '1', minWidth: 0, overflow: 'hidden' }}>
+                          <div style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>{disco.nombreDisco}</div>
+                          <small className="disco-artist-sub">
+                            {disco.artista} {disco.anio ? `• ${disco.anio}` : ''}
+                          </small>
+                        </div>
+                      </summary>
+                      <div style={{ padding: '0 8px 8px 8px' }}>
+                        {disco.canciones.map((cancion) => {
+                          const tituloLimpio = limpiarTituloCancion(cancion.trackName);
+                          return (
+                            <div key={cancion.trackId} className="cancion-item">
+                              <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
+                                <strong style={{ fontSize: '0.8em', display: 'block', lineHeight: '1.2', color: 'var(--text-main)' }}>
+                                  {cancion.trackNumber ? `${cancion.trackNumber}. ` : ''}{tituloLimpio}
+                                </strong>
+                                <small style={{ color: 'var(--text-muted)', fontSize: '0.7em', display: 'block', marginTop: '2px' }}>
+                                  {formatearTiempo(Math.round((cancion.trackTimeMillis || 0) / 1000))}
+                                </small>
+                              </div>
+                              <button 
+                                onClick={() => agregarAlSetlist(cancion)}
+                                title="Agregar al setlist"
+                                style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9em', flexShrink: 0 }}
+                              >
+                                <i className="fa-solid fa-plus"></i>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Formulario para agregar canciones propias fuera de catálogo */}
+              <form onSubmit={agregarCancionFavorita} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px', backgroundColor: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
+                <span style={{ fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text-main)' }}>{t.addFavoriteTitle}</span>
+                <input 
+                  type="text"
+                  className="custom-input"
+                  placeholder={t.songTitlePlaceholder}
+                  value={nuevoNombreFav}
+                  onChange={(e) => setNuevoNombreFav(e.target.value)}
+                  style={{ width: '100%' }}
+                />
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input 
+                    type="text"
+                    className="custom-input"
+                    placeholder="03:30"
+                    value={nuevaDuracionFav}
+                    onChange={(e) => setNuevaDuracionFav(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button type="submit" className="btn-pill" style={{ height: '36px', padding: '0 12px', fontSize: '0.8em' }}>
+                    {t.saveFavoriteBtn}
+                  </button>
+                </div>
+              </form>
+
+              {/* Lista de Canciones Guardadas */}
+              <div className="scroll-area">
+                {cancionesFavoritas.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 10px', fontSize: '0.85em', fontStyle: 'italic' }}>
+                    {t.favoritesEmpty}
+                  </p>
+                ) : (
+                  cancionesFavoritas.map((fav) => (
+                    <div key={fav.id} className="cancion-item" style={{ marginBottom: '6px' }}>
+                      <div style={{ textAlign: 'left', flex: '1', minWidth: 0, wordBreak: 'break-word' }}>
+                        <strong style={{ fontSize: '0.85em', display: 'block', color: 'var(--text-main)' }}>
+                          🎵 {fav.nombre}
+                        </strong>
+                        <small style={{ color: 'var(--text-muted)', fontSize: '0.75em' }}>
+                          {formatearTiempo(fav.duracion)}
+                        </small>
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          onClick={() => agregarAlSetlist(fav)}
+                          title="Agregar al setlist"
+                          style={{ backgroundColor: 'var(--btn-blue)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85em' }}
+                        >
+                          <i className="fa-solid fa-plus"></i>
+                        </button>
+                        <button 
+                          onClick={() => eliminarCancionFavorita(fav.id)}
+                          className="btn-danger-round"
+                          style={{ width: '28px', height: '28px', fontSize: '0.75em' }}
+                          title={t.removeTooltip}
+                        >
+                          -
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+
         </section>
 
         {/* SETLIST PRINCIPAL */}
@@ -1813,7 +2005,7 @@ function App() {
         </div>
       )}
 
-      {/* NODO OCULTO EN EL DOM RAÍZ PARA EXPORTACIÓN LIMPIA EN PDF SIN ERRORES DE HOJA EN BLANCO */}
+      {/* NODO OCULTO EN EL DOM RAÍZ PARA EXPORTACIÓN LIMPIA EN PDF */}
       <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1000, pointerEvents: 'none', opacity: 1 }}>
         <div id="setlist-pdf-export-root">
           <RenderHojaA4 />
