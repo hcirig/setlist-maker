@@ -56,7 +56,7 @@ const translations = {
 
     setlistTitle: 'Tu Setlist',
     clearSetlistBtn: 'VACIAR',
-    confirmClear: '⚠️ ¿Estás seguro de que quieres borrar todo el setlist?',
+    confirmClear: '⚠️ ¿Estás seguro de que quieres borrar todo el setlist local?',
     setlistEmpty: 'Busca y agrega canciones desde el catálogo para armar tu lista...',
     tapeTooltip: 'Pista / Tape',
     segueTooltip: 'Enganchada al siguiente track',
@@ -103,6 +103,7 @@ const translations = {
     defaultSetText: 'SET 1',
     untitledSong: 'Canción sin título',
 
+    // Traducciones de Autenticación y Bandas (Fase 2 & 3)
     loginGoogle: 'Iniciar sesión con Google',
     logout: 'Cerrar sesión',
     welcomeTitle: '¡Bienvenido a Setlist Creator!',
@@ -118,7 +119,19 @@ const translations = {
     savingBand: 'Guardando...',
     bandSavedSuccess: '¡Banda guardada con éxito!',
     bandUpdatedSuccess: '¡Banda actualizada!',
-    bandNameRequired: 'El nombre de la banda es obligatorio.'
+    bandNameRequired: 'El nombre de la banda es obligatorio.',
+
+    // Traducciones de Setlists (Fase 4)
+    savedSetlistsLabel: 'Setlist Guardado:',
+    newSetlistOption: '+ Nuevo Setlist',
+    saveSetlistBtn: 'GUARDAR SETLIST',
+    saveSetlistAsBtn: 'GUARDAR COMO...',
+    deleteSetlistBtn: 'ELIMINAR SETLIST',
+    savingSetlist: 'Guardando setlist...',
+    setlistSavedSuccess: '¡Setlist guardado en la nube!',
+    confirmDeleteSetlist: '⚠️ ¿Estás seguro de que quieres eliminar este setlist guardado de Supabase?',
+    promptSetlistName: 'Ingresa un nombre para identificar este Setlist (Ej: Luna Park 2026):',
+    noBandSelectedWarn: 'Debes seleccionar una banda antes de guardar un setlist.'
   },
   en: {
     themeDark: 'Dark',
@@ -149,7 +162,7 @@ const translations = {
 
     setlistTitle: 'Your Setlist',
     clearSetlistBtn: 'CLEAR',
-    confirmClear: '⚠️ Are you sure you want to clear the entire setlist?',
+    confirmClear: '⚠️ Are you sure you want to clear the local setlist?',
     setlistEmpty: 'Search and add songs from the catalog to build your list...',
     tapeTooltip: 'Backing Track / Tape',
     segueTooltip: 'Segue to next track',
@@ -211,7 +224,18 @@ const translations = {
     savingBand: 'Saving...',
     bandSavedSuccess: 'Band saved successfully!',
     bandUpdatedSuccess: 'Band updated!',
-    bandNameRequired: 'Band name is required.'
+    bandNameRequired: 'Band name is required.',
+
+    savedSetlistsLabel: 'Saved Setlist:',
+    newSetlistOption: '+ New Setlist',
+    saveSetlistBtn: 'SAVE SETLIST',
+    saveSetlistAsBtn: 'SAVE AS...',
+    deleteSetlistBtn: 'DELETE SETLIST',
+    savingSetlist: 'Saving setlist...',
+    setlistSavedSuccess: 'Setlist saved to cloud!',
+    confirmDeleteSetlist: '⚠️ Are you sure you want to delete this saved setlist from Supabase?',
+    promptSetlistName: 'Enter a name to identify this Setlist (e.g. MSG 2026):',
+    noBandSelectedWarn: 'You must select a band before saving a setlist.'
   }
 };
 
@@ -254,6 +278,11 @@ function App() {
   const [cargandoBanda, setCargandoBanda] = useState(false);
   const [archivoLogo, setArchivoLogo] = useState(null);
 
+  // Estados de Gestión de Setlists (Fase 4)
+  const [misSetlists, setMisSetlists] = useState([]);
+  const [setlistSeleccionadoId, setSetlistSeleccionadoId] = useState('nuevo');
+  const [cargandoSetlist, setCargandoSetlist] = useState(false);
+
   const bandasInicializadasRef = useRef(false);
 
   const [busqueda, setBusqueda] = useState('');
@@ -287,7 +316,7 @@ function App() {
   const dragItem = useRef();
   const dragOverItem = useRef();
 
-  // Escuchar cambios de autenticación sin sobreescribir borrador al cambiar de pestaña
+  // Escuchar cambios de autenticación
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -307,7 +336,6 @@ function App() {
       setUser(session?.user ?? null);
       if (session) {
         setMostrarBienvenida(false);
-        // Solo recargar si aún no habíamos cargado las bandas en memoria
         if (!bandasInicializadasRef.current) {
           comprobarBandasExistentes(session.user.id);
         }
@@ -316,6 +344,16 @@ function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Cargar setlists al cambiar la banda seleccionada
+  useEffect(() => {
+    if (user && bandaSeleccionadaId && bandaSeleccionadaId !== 'nueva') {
+      cargarSetlistsBanda(bandaSeleccionadaId);
+    } else {
+      setMisSetlists([]);
+      setSetlistSeleccionadoId('nuevo');
+    }
+  }, [bandaSeleccionadaId, user]);
 
   const comprobarBandasExistentes = async (userId, forzarCarga = false) => {
     try {
@@ -349,6 +387,8 @@ function App() {
       setContactoRedes('');
       setLogoUrl(null);
       setArchivoLogo(null);
+      setMisSetlists([]);
+      seleccionarSetlist('nuevo');
     } else {
       setBandaSeleccionadaId(banda.id);
       localStorage.setItem('setlist_selected_band_id', banda.id);
@@ -356,6 +396,133 @@ function App() {
       setContactoRedes(banda.contacto_redes || '');
       setLogoUrl(banda.logo_url || null);
       setArchivoLogo(null);
+    }
+  };
+
+  // Cargar lista de setlists de la banda activa desde Supabase
+  const cargarSetlistsBanda = async (bandaId) => {
+    try {
+      const { data, error } = await supabase
+        .from('setlists')
+        .select('*')
+        .eq('banda_id', bandaId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setMisSetlists(data);
+      }
+    } catch (err) {
+      console.error('Error al cargar setlists de la banda:', err);
+    }
+  };
+
+  // Seleccionar y cargar un setlist guardado
+  const seleccionarSetlist = (setlistObj) => {
+    if (!setlistObj || setlistObj === 'nuevo') {
+      setSetlistSeleccionadoId('nuevo');
+      setSetlist([]);
+      setFecha('');
+      setVenue('');
+      setCiudad('');
+      setGap(15);
+    } else {
+      setSetlistSeleccionadoId(setlistObj.id);
+      setFecha(setlistObj.fecha || '');
+      setVenue(setlistObj.venue || '');
+      setCiudad(setlistObj.ciudad || '');
+      setGap(setlistObj.gap || 15);
+      setSetlist(Array.isArray(setlistObj.contenido) ? setlistObj.contenido : []);
+    }
+  };
+
+  // Guardar o Actualizar Setlist en Supabase (Fase 4)
+  const guardarSetlistDB = async (esGuardarComo = false) => {
+    if (!user) return;
+    if (bandaSeleccionadaId === 'nueva') {
+      alert(t.noBandSelectedWarn);
+      return;
+    }
+
+    let nombreShowFinal = venue ? `${venue} ${fecha ? ' - ' + fecha : ''}` : 'Show ' + new Date().toLocaleDateString();
+
+    if (esGuardarComo || setlistSeleccionadoId === 'nuevo') {
+      const nombreIngresado = prompt(t.promptSetlistName, nombreShowFinal);
+      if (nombreIngresado === null) return; // Cancelado
+      if (nombreIngresado.trim()) nombreShowFinal = nombreIngresado.trim();
+    }
+
+    setCargandoSetlist(true);
+    try {
+      if (!esGuardarComo && setlistSeleccionadoId !== 'nuevo') {
+        // ACTUALIZAR EXISTENTE
+        const { error } = await supabase
+          .from('setlists')
+          .update({
+            nombre_show: nombreShowFinal,
+            fecha: fecha,
+            venue: venue.trim(),
+            ciudad: ciudad.trim(),
+            gap: Number(gap),
+            contenido: setlist
+          })
+          .eq('id', setlistSeleccionadoId)
+          .eq('user_id', user.id);
+
+        if (!error) {
+          alert(t.setlistSavedSuccess);
+          cargarSetlistsBanda(bandaSeleccionadaId);
+        }
+      } else {
+        // INSERTAR NUEVO O "GUARDAR COMO..."
+        const { data, error } = await supabase
+          .from('setlists')
+          .insert({
+            user_id: user.id,
+            banda_id: bandaSeleccionadaId,
+            nombre_show: nombreShowFinal,
+            fecha: fecha,
+            venue: venue.trim(),
+            ciudad: ciudad.trim(),
+            gap: Number(gap),
+            contenido: setlist
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          setSetlistSeleccionadoId(data.id);
+          alert(t.setlistSavedSuccess);
+          cargarSetlistsBanda(bandaSeleccionadaId);
+        }
+      }
+    } catch (err) {
+      console.error('Error al guardar setlist:', err);
+    } finally {
+      setCargandoSetlist(false);
+    }
+  };
+
+  // Eliminar Setlist de Supabase
+  const eliminarSetlistDB = async () => {
+    if (setlistSeleccionadoId === 'nuevo' || !user) return;
+    if (!window.confirm(t.confirmDeleteSetlist)) return;
+
+    setCargandoSetlist(true);
+    try {
+      const { error } = await supabase
+        .from('setlists')
+        .delete()
+        .eq('id', setlistSeleccionadoId)
+        .eq('user_id', user.id);
+
+      if (!error) {
+        seleccionarSetlist('nuevo');
+        cargarSetlistsBanda(bandaSeleccionadaId);
+      }
+    } catch (err) {
+      console.error('Error al eliminar setlist:', err);
+    } finally {
+      setCargandoSetlist(false);
     }
   };
 
@@ -445,6 +612,7 @@ function App() {
     localStorage.removeItem('setlist_selected_band_id');
     bandasInicializadasRef.current = false;
     setMisBandas([]);
+    setMisSetlists([]);
     setBandaSeleccionadaId('nueva');
     setMostrarBienvenida(true);
   };
@@ -1061,7 +1229,32 @@ function App() {
 
         {/* PRÓXIMO SHOW */}
         <div id="sec-proximo-show" className="section-block">
-          <h2 className="section-title-right">{t.upcomingShowTitle}</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h2 className="section-title-right" style={{ margin: 0 }}>{t.upcomingShowTitle}</h2>
+            
+            {/* Selector de Setlists (Fase 4) */}
+            {user && bandaSeleccionadaId !== 'nueva' && (
+              <select 
+                value={setlistSeleccionadoId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'nuevo') {
+                    seleccionarSetlist('nuevo');
+                  } else {
+                    const setlistEncontrado = misSetlists.find(s => s.id === val);
+                    seleccionarSetlist(setlistEncontrado);
+                  }
+                }}
+                className="custom-input"
+                style={{ fontSize: '0.85em', padding: '4px 8px', maxWidth: '180px' }}
+              >
+                <option value="nuevo">{t.newSetlistOption}</option>
+                {misSetlists.map(s => (
+                  <option key={s.id} value={s.id}>{s.nombre_show || 'Show sin nombre'}</option>
+                ))}
+              </select>
+            )}
+          </div>
           
           <div className="field-group">
             <label className="field-label">{t.dateLabel}</label>
@@ -1480,7 +1673,45 @@ function App() {
             </div>
           </div>
 
-          {/* 4. BOTÓN EXPORTAR */}
+          {/* 4. GUARDAR / ELIMINAR SETLIST EN NUBE (FASE 4) */}
+          {user && bandaSeleccionadaId !== 'nueva' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
+              <button 
+                onClick={() => guardarSetlistDB(false)}
+                disabled={cargandoSetlist || setlist.length === 0}
+                className="btn-pill"
+                style={{ width: '100%', justifyContent: 'center', opacity: setlist.length > 0 ? 1 : 0.6 }}
+              >
+                <i className="fa-solid fa-cloud-arrow-up btn-icon"></i>
+                <span>{cargandoSetlist ? t.savingSetlist : t.saveSetlistBtn}</span>
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={() => guardarSetlistDB(true)}
+                  disabled={cargandoSetlist || setlist.length === 0}
+                  className="btn-guest"
+                  style={{ flex: 1, fontSize: '0.8em', height: '36px' }}
+                >
+                  {t.saveSetlistAsBtn}
+                </button>
+
+                {setlistSeleccionadoId !== 'nuevo' && (
+                  <button 
+                    onClick={eliminarSetlistDB}
+                    disabled={cargandoSetlist}
+                    className="btn-danger-pill"
+                    style={{ height: '36px', padding: '0 10px', fontSize: '0.8em' }}
+                    title={t.deleteSetlistBtn}
+                  >
+                    <i className="fa-regular fa-trash-can"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 5. BOTÓN EXPORTAR */}
           <button 
             onClick={() => setMostrarPreview(true)}
             disabled={setlistRenderizado.length === 0}
