@@ -3,6 +3,29 @@ import html2pdf from 'html2pdf.js'
 import { supabase } from './supabaseClient'
 import './App.css'
 
+// Helper para subir imágenes al bucket público de Supabase Storage
+const subirLogoASupabase = async (file, userId, bandaId) => {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${userId}/${bandaId || Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('logos')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('logos')
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Error al subir el logo a Supabase:', error);
+    return null;
+  }
+};
+
 const translations = {
   es: {
     themeDark: 'Oscuro',
@@ -79,7 +102,7 @@ const translations = {
     defaultSetText: 'SET 1',
     untitledSong: 'Canción sin título',
 
-    // Nuevas traducciones de Autenticación
+    // Traducciones de Autenticación y Bandas (Fase 2 & 3)
     loginGoogle: 'Iniciar sesión con Google',
     logout: 'Cerrar sesión',
     welcomeTitle: '¡Bienvenido a Setlist Creator!',
@@ -88,7 +111,14 @@ const translations = {
     onboardingTitle: '¡Empecemos!',
     onboardingSub: 'Para comenzar, ingresa el nombre de tu primera banda:',
     onboardingBtn: 'Guardar y empezar',
-    guestMode: 'Modo Invitado'
+    guestMode: 'Modo Invitado',
+    saveBand: 'Guardar Banda',
+    updateBand: 'Actualizar Banda',
+    newBandOption: '+ Nueva Banda',
+    savingBand: 'Guardando...',
+    bandSavedSuccess: '¡Banda guardada con éxito!',
+    bandUpdatedSuccess: '¡Banda actualizada!',
+    bandNameRequired: 'El nombre de la banda es obligatorio.'
   },
   en: {
     themeDark: 'Dark',
@@ -173,7 +203,14 @@ const translations = {
     onboardingTitle: "Let's get started!",
     onboardingSub: "Enter your first band's name to begin:",
     onboardingBtn: 'Save & start',
-    guestMode: 'Guest Mode'
+    guestMode: 'Guest Mode',
+    saveBand: 'Save Band',
+    updateBand: 'Update Band',
+    newBandOption: '+ New Band',
+    savingBand: 'Saving...',
+    bandSavedSuccess: 'Band saved successfully!',
+    bandUpdatedSuccess: 'Band updated!',
+    bandNameRequired: 'Band name is required.'
   }
 };
 
@@ -210,6 +247,12 @@ function App() {
   const [nombrePrimeraBanda, setNombrePrimeraBanda] = useState('');
   const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
 
+  // Estados de Gestión de Bandas (Fase 3)
+  const [misBandas, setMisBandas] = useState([]);
+  const [bandaSeleccionadaId, setBandaSeleccionadaId] = useState('nueva');
+  const [cargandoBanda, setCargandoBanda] = useState(false);
+  const [archivoLogo, setArchivoLogo] = useState(null);
+
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
@@ -241,7 +284,7 @@ function App() {
   const dragItem = useRef();
   const dragOverItem = useRef();
 
-  // Escuchar cambios de autenticación
+  // Escuchar cambios de autenticación y sincronizar bandas
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -272,14 +315,102 @@ function App() {
     try {
       const { data, error } = await supabase
         .from('bandas')
-        .select('id, nombre')
-        .eq('user_id', userId);
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
 
-      if (!error && data && data.length === 0) {
-        setMostrarOnboarding(true);
+      if (!error && data) {
+        if (data.length === 0) {
+          setMostrarOnboarding(true);
+        } else {
+          setMisBandas(data);
+          seleccionarBanda(data[0]);
+        }
       }
     } catch (err) {
       console.error("Error al verificar bandas:", err);
+    }
+  };
+
+  const seleccionarBanda = (banda) => {
+    if (!banda || banda === 'nueva') {
+      setBandaSeleccionadaId('nueva');
+      setNombreBanda('');
+      setContactoRedes('');
+      setLogoUrl(null);
+      setArchivoLogo(null);
+    } else {
+      setBandaSeleccionadaId(banda.id);
+      setNombreBanda(banda.nombre || '');
+      setContactoRedes(banda.contacto_redes || '');
+      setLogoUrl(banda.logo_url || null);
+      setArchivoLogo(null);
+    }
+  };
+
+  const guardarBandaDB = async () => {
+    if (!nombreBanda.trim()) {
+      alert(t.bandNameRequired);
+      return;
+    }
+    if (!user) return;
+
+    setCargandoBanda(true);
+    try {
+      let urlFinalLogo = logoUrl;
+
+      if (archivoLogo) {
+        const urlSubida = await subirLogoASupabase(
+          archivoLogo,
+          user.id,
+          bandaSeleccionadaId !== 'nueva' ? bandaSeleccionadaId : null
+        );
+        if (urlSubida) urlFinalLogo = urlSubida;
+      }
+
+      if (bandaSeleccionadaId === 'nueva') {
+        const { data, error } = await supabase
+          .from('bandas')
+          .insert({
+            user_id: user.id,
+            nombre: nombreBanda.trim(),
+            contacto_redes: contactoRedes.trim(),
+            logo_url: urlFinalLogo
+          })
+          .select()
+          .single();
+
+        if (!error && data) {
+          const nuevasBandas = [...misBandas, data];
+          setMisBandas(nuevasBandas);
+          seleccionarBanda(data);
+          alert(t.bandSavedSuccess);
+        }
+      } else {
+        const { error } = await supabase
+          .from('bandas')
+          .update({
+            nombre: nombreBanda.trim(),
+            contacto_redes: contactoRedes.trim(),
+            logo_url: urlFinalLogo
+          })
+          .eq('id', bandaSeleccionadaId)
+          .eq('user_id', user.id);
+
+        if (!error) {
+          const bandasActualizadas = misBandas.map(b => 
+            b.id === bandaSeleccionadaId 
+              ? { ...b, nombre: nombreBanda.trim(), contacto_redes: contactoRedes.trim(), logo_url: urlFinalLogo } 
+              : b
+          );
+          setMisBandas(bandasActualizadas);
+          alert(t.bandUpdatedSuccess);
+        }
+      }
+    } catch (err) {
+      console.error('Error al guardar la banda:', err);
+    } finally {
+      setCargandoBanda(false);
     }
   };
 
@@ -300,6 +431,8 @@ function App() {
     await supabase.auth.signOut();
     setMenuUsuarioAbierto(false);
     localStorage.removeItem('setlist_guest_session');
+    setMisBandas([]);
+    setBandaSeleccionadaId('nueva');
     setMostrarBienvenida(true);
   };
 
@@ -311,13 +444,18 @@ function App() {
   const guardarOnboardingBanda = async () => {
     if (!nombrePrimeraBanda.trim() || !user) return;
     try {
-      const { error } = await supabase.from('bandas').insert({
-        user_id: user.id,
-        nombre: nombrePrimeraBanda.trim()
-      });
+      const { data, error } = await supabase
+        .from('bandas')
+        .insert({
+          user_id: user.id,
+          nombre: nombrePrimeraBanda.trim()
+        })
+        .select()
+        .single();
 
-      if (!error) {
-        setNombreBanda(nombrePrimeraBanda.trim());
+      if (!error && data) {
+        setMisBandas([data]);
+        seleccionarBanda(data);
         setMostrarOnboarding(false);
       }
     } catch (err) {
@@ -380,6 +518,7 @@ function App() {
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setArchivoLogo(file);
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const dataUrl = uploadEvent.target.result;
@@ -396,6 +535,7 @@ function App() {
 
   const quitarLogo = () => {
     setLogoUrl(null);
+    setArchivoLogo(null);
     setLogoDimensions({ width: 0, height: 0 });
   };
 
@@ -803,7 +943,32 @@ function App() {
         
         {/* MI BANDA */}
         <div id="sec-mi-banda" className="section-block">
-          <h2 className="section-title-right">{t.myBandTitle}</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h2 className="section-title-right" style={{ margin: 0 }}>{t.myBandTitle}</h2>
+            
+            {/* Selector de Bandas (solo para usuarios registrados) */}
+            {user && (
+              <select 
+                value={bandaSeleccionadaId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'nueva') {
+                    seleccionarBanda('nueva');
+                  } else {
+                    const bandaEncontrada = misBandas.find(b => b.id === val);
+                    seleccionarBanda(bandaEncontrada);
+                  }
+                }}
+                className="custom-input"
+                style={{ fontSize: '0.85em', padding: '4px 8px', maxWidth: '180px' }}
+              >
+                <option value="nueva">{t.newBandOption}</option>
+                {misBandas.map(b => (
+                  <option key={b.id} value={b.id}>{b.nombre}</option>
+                ))}
+              </select>
+            )}
+          </div>
           
           <div className="field-group">
             <label className="field-label">{t.bandNameLabel}</label>
@@ -859,6 +1024,19 @@ function App() {
               onChange={(e) => setContactoRedes(e.target.value)}
             />
           </div>
+
+          {/* Botón Guardar / Actualizar Banda */}
+          {user && (
+            <button 
+              onClick={guardarBandaDB}
+              disabled={cargandoBanda || !nombreBanda.trim()}
+              className="btn-pill"
+              style={{ width: '100%', marginTop: '12px', justifyContent: 'center', opacity: nombreBanda.trim() ? 1 : 0.6 }}
+            >
+              <i className="fa-solid fa-floppy-disk btn-icon"></i>
+              <span>{cargandoBanda ? t.savingBand : (bandaSeleccionadaId === 'nueva' ? t.saveBand : t.updateBand)}</span>
+            </button>
+          )}
         </div>
 
         {/* PRÓXIMO SHOW */}
