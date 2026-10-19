@@ -314,19 +314,6 @@ function App() {
   const dragItem = useRef();
   const dragOverItem = useRef();
 
-  // Calcular dinámicamente las dimensiones reales de cualquier logoUrl (evita deformación en PDF)
-  useEffect(() => {
-    if (logoUrl) {
-      const img = new Image();
-      img.onload = () => {
-        setLogoDimensions({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
-      };
-      img.src = logoUrl;
-    } else {
-      setLogoDimensions({ width: 0, height: 0 });
-    }
-  }, [logoUrl]);
-
   // Escuchar cambios de autenticación
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1750,71 +1737,155 @@ function App() {
 
       </main>
 
-      {/* POPUP / MODAL DE VISTA PREVIA */}
-      {mostrarPreview && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
+{/* POPUP / MODAL DE VISTA PREVIA ADAPTADO A MÓVILES Y DESKTOP */}
+{mostrarPreview && (
+  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
+    
+    <div style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', width: '100%', maxWidth: '850px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid var(--input-border)', color: 'var(--text-main)' }}>
+      
+      {/* Barra de Controles Superior */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.lineSpacing}</span>
+            <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
+            <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{espaciadoPdf}</span>
+            <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
+          </div>
           
-          <div style={{ backgroundColor: 'var(--panel-bg)', padding: '20px', borderRadius: '12px', width: '100%', maxWidth: '900px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid var(--input-border)', color: 'var(--text-main)' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '15px', flexWrap: 'wrap' }}>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t.lineSpacing}</span>
-                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round">-</button>
-                  <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{espaciadoPdf}</span>
-                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round">+</button>
-                </div>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '15px', borderLeft: '1px solid var(--border-light)' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '0.9em' }}>{t.fontSize}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round">-</button>
-                  <span style={{ fontSize: '1.1em', fontWeight: 'bold', width: '25px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round">+</button>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button 
-                  onClick={() => procesarPDF('descargar')}
-                  className="btn-pill"
-                >
-                  <i className="fa-solid fa-download"></i>
-                  <span>{t.downloadBtn}</span>
-                </button>
-                
-                <button 
-                  onClick={() => setMostrarPreview(false)}
-                  className="btn-danger-pill"
-                >
-                  {t.closeBtn}
-                </button>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', position: 'relative', overflow: 'hidden' }}>
-              {cargandoPdf && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#fff', fontSize: '1.2em', fontWeight: 'bold', zIndex: 10 }}>
-                  {t.generatingPreview}
-                </div>
-              )}
-              
-              {pdfUrl && (
-                <iframe
-                  src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-                  style={{ width: '100%', height: '100%', border: 'none' }}
-                  title="PDF Preview"
-                />
-              )}
-            </div>
-
-            <div style={{ textAlign: 'center', fontSize: '0.8em', color: 'var(--text-muted)' }}>
-              {t.pdfMobileNotice}<a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: 'var(--btn-blue)', textDecoration: 'underline'}}>{t.pdfMobileNoticeLink}</a>.
-            </div>
-
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px', borderLeft: '1px solid var(--border-light)' }}>
+            <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.fontSize}</span>
+            <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
+            <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
+            <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
           </div>
         </div>
-      )}
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button 
+            onClick={() => procesarPDF('descargar')}
+            className="btn-pill"
+            style={{ height: '34px', padding: '0 12px', fontSize: '0.85em' }}
+          >
+            <i className="fa-solid fa-download"></i>
+            <span>{t.downloadBtn}</span>
+          </button>
+          
+          <button 
+            onClick={() => setMostrarPreview(false)}
+            className="btn-danger-pill"
+            style={{ height: '34px', padding: '0 10px', fontSize: '0.85em' }}
+          >
+            {t.closeBtn}
+          </button>
+        </div>
+      </div>
+
+      {/* Contenedor Interactivo de Vista Previa (Funciona 100% en Android y iOS) */}
+      <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', padding: '15px 5px', overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
+        <div 
+          style={{ 
+            width: '100%',
+            maxWidth: '210mm',
+            minHeight: '297mm',
+            backgroundColor: '#ffffff', 
+            color: '#000000', 
+            fontFamily: 'Arial, sans-serif', 
+            padding: '20mm 12mm 15mm 12mm',
+            boxSizing: 'border-box',
+            boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+            borderRadius: '2px',
+            transformOrigin: 'top center',
+            fontSize: '12px'
+          }}
+        >
+          {/* Encabezado Hoja A4 */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                style={{ maxHeight: '22mm', maxWidth: '55mm', objectFit: 'contain' }} 
+              />
+            ) : nombreBanda.trim() ? (
+              <h1 style={{ margin: 0, fontSize: '20px', fontStyle: 'italic', textTransform: 'uppercase' }}>{nombreBanda.trim()}</h1>
+            ) : (
+              <div />
+            )}
+
+            <div style={{ textAlign: 'right', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.4' }}>
+              <div>{idioma === 'en' ? 'Date' : 'Fecha'}: {fecha || '_____'}</div>
+              <div>{idioma === 'en' ? 'Venue' : 'Lugar'}: {venue || '_____'}</div>
+              <div>{idioma === 'en' ? 'City' : 'Ciudad'}: {ciudad || '_____'}</div>
+            </div>
+          </div>
+
+          {/* Listado de Canciones */}
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {setlistRenderizado.map((item) => (
+              <div 
+                key={item.idSetlist} 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  borderTop: item.esEspecial ? '1px solid #666' : 'none',
+                  borderBottom: item.esEspecial ? '1px solid #666' : 'none',
+                  paddingTop: item.esEspecial ? '6px' : '0',
+                  paddingBottom: item.esEspecial ? '6px' : '0',
+                  marginBottom: `${espaciadoPdf}px`
+                }}
+              >
+                {item.esTextoLibre ? (
+                  <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '6px' }}>
+                    {item.nombre}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                    <div style={{ width: `${Math.max(40, tamanoFuentePdf * 1.6)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
+                      {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
+                    </div>
+                    
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                      <span style={{ 
+                        fontSize: `${tamanoFuentePdf}px`, 
+                        fontWeight: item.esEspecial ? 'normal' : 'bold', 
+                        textTransform: item.esEspecial ? 'none' : 'uppercase', 
+                        fontStyle: item.esEspecial ? 'italic' : 'normal' 
+                      }}>
+                        {item.nombre} {item.enganchada && '>'}
+                      </span>
+
+                      {item.notas && (
+                        <span style={{ 
+                          fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
+                          color: '#555', 
+                          fontStyle: 'italic',
+                          fontWeight: 'normal'
+                        }}>
+                          ({item.notas})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Pie de Hoja A4 */}
+          {contactoRedes.trim() && (
+            <div style={{ borderTop: '1px solid #000', marginTop: '20px', paddingTop: '8px', textAlign: 'center', fontSize: '12px' }}>
+              {contactoRedes.trim()}
+            </div>
+          )}
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+)}
 
       {/* MODAL DE BIENVENIDA */}
       {mostrarBienvenida && (
