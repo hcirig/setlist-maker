@@ -517,3 +517,161 @@ body {
     overflow-x: hidden;
   }
 }
+/* =========================================
+   MODALES (BIENVENIDA Y ONBOARDING) & USER MENU
+   ========================================= */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.modal-card {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 30px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--text-main);
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.modal-subtitle {
+  margin: 0;
+  font-size: 0.95em;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.btn-google {
+  height: 46px;
+  border-radius: 9999px;
+  border: 1px solid #4285f4;
+  background-color: #4285f4;
+  color: #ffffff;
+  font-size: 0.95em;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+.btn-google:hover {
+  background-color: #3367d6;
+  border-color: #3367d6;
+  transform: translateY(-1px);
+}
+
+.btn-guest {
+  height: 42px;
+  border-radius: 9999px;
+  border: 1px solid var(--nav-btn-border);
+  background-color: transparent;
+  color: var(--text-main);
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.btn-guest:hover {
+  border-color: var(--text-muted);
+  background-color: var(--card-bg);
+}
+
+/* User Menu Dropdown */
+.user-menu-container {
+  position: relative;
+}
+
+.user-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px 0 6px;
+  border-radius: 9999px;
+  border: 1px solid var(--nav-btn-border);
+  background-color: var(--nav-btn-bg);
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.user-avatar-btn img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 0 !important;
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 8px 0;
+  min-width: 200px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-dropdown-item {
+  padding: 10px 16px;
+  font-size: 0.85em;
+  color: var(--text-main);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+  background-color: var(--card-bg);
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background-color: var(--border-light);
+  margin: 6px 0;
+}
