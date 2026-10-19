@@ -103,7 +103,6 @@ const translations = {
     defaultSetText: 'SET 1',
     untitledSong: 'Canción sin título',
 
-    // Traducciones de Autenticación y Bandas (Fase 2 & 3)
     loginGoogle: 'Iniciar sesión con Google',
     logout: 'Cerrar sesión',
     welcomeTitle: '¡Bienvenido a Setlist Creator!',
@@ -121,7 +120,6 @@ const translations = {
     bandUpdatedSuccess: '¡Banda actualizada!',
     bandNameRequired: 'El nombre de la banda es obligatorio.',
 
-    // Traducciones de Setlists (Fase 4)
     savedSetlistsLabel: 'Setlist Guardado:',
     newSetlistOption: '+ Nuevo Setlist',
     saveSetlistBtn: 'GUARDAR SETLIST',
@@ -316,6 +314,19 @@ function App() {
   const dragItem = useRef();
   const dragOverItem = useRef();
 
+  // Calcular dinámicamente las dimensiones reales de cualquier logoUrl (evita deformación en PDF)
+  useEffect(() => {
+    if (logoUrl) {
+      const img = new Image();
+      img.onload = () => {
+        setLogoDimensions({ width: img.naturalWidth || img.width, height: img.naturalHeight || img.height });
+      };
+      img.src = logoUrl;
+    } else {
+      setLogoDimensions({ width: 0, height: 0 });
+    }
+  }, [logoUrl]);
+
   // Escuchar cambios de autenticación
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -345,7 +356,7 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Cargar setlists al cambiar la banda seleccionada
+  // Cargar setlists al cambiar la banda seleccionada o la sesión
   useEffect(() => {
     if (user && bandaSeleccionadaId && bandaSeleccionadaId !== 'nueva') {
       cargarSetlistsBanda(bandaSeleccionadaId);
@@ -401,6 +412,7 @@ function App() {
 
   // Cargar lista de setlists de la banda activa desde Supabase
   const cargarSetlistsBanda = async (bandaId) => {
+    if (!bandaId || bandaId === 'nueva' || !user) return;
     try {
       const { data, error } = await supabase
         .from('setlists')
@@ -408,11 +420,13 @@ function App() {
         .eq('banda_id', bandaId)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
+      if (error) {
+        console.error('Error al cargar setlists de Supabase:', error);
+      } else if (data) {
         setMisSetlists(data);
       }
     } catch (err) {
-      console.error('Error al cargar setlists de la banda:', err);
+      console.error('Error cargando setlists:', err);
     }
   };
 
@@ -435,19 +449,22 @@ function App() {
     }
   };
 
-  // Guardar o Actualizar Setlist en Supabase (Fase 4)
+  // Guardar o Actualizar Setlist en Supabase con reporte explícito de errores
   const guardarSetlistDB = async (esGuardarComo = false) => {
-    if (!user) return;
+    if (!user) {
+      alert("Debes iniciar sesión para guardar setlists en la nube.");
+      return;
+    }
     if (bandaSeleccionadaId === 'nueva') {
       alert(t.noBandSelectedWarn);
       return;
     }
 
-    let nombreShowFinal = venue ? `${venue} ${fecha ? ' - ' + fecha : ''}` : 'Show ' + new Date().toLocaleDateString();
+    let nombreShowFinal = venue ? `${venue}${fecha ? ' - ' + fecha : ''}` : 'Show ' + new Date().toLocaleDateString();
 
     if (esGuardarComo || setlistSeleccionadoId === 'nuevo') {
       const nombreIngresado = prompt(t.promptSetlistName, nombreShowFinal);
-      if (nombreIngresado === null) return; // Cancelado
+      if (nombreIngresado === null) return; 
       if (nombreIngresado.trim()) nombreShowFinal = nombreIngresado.trim();
     }
 
@@ -468,9 +485,12 @@ function App() {
           .eq('id', setlistSeleccionadoId)
           .eq('user_id', user.id);
 
-        if (!error) {
+        if (error) {
+          console.error('Error al actualizar setlist:', error);
+          alert(`Error al guardar setlist: ${error.message}`);
+        } else {
           alert(t.setlistSavedSuccess);
-          cargarSetlistsBanda(bandaSeleccionadaId);
+          await cargarSetlistsBanda(bandaSeleccionadaId);
         }
       } else {
         // INSERTAR NUEVO O "GUARDAR COMO..."
@@ -489,14 +509,18 @@ function App() {
           .select()
           .single();
 
-        if (!error && data) {
+        if (error) {
+          console.error('Error al insertar setlist:', error);
+          alert(`Error al guardar setlist: ${error.message}`);
+        } else if (data) {
           setSetlistSeleccionadoId(data.id);
           alert(t.setlistSavedSuccess);
-          cargarSetlistsBanda(bandaSeleccionadaId);
+          await cargarSetlistsBanda(bandaSeleccionadaId);
         }
       }
     } catch (err) {
-      console.error('Error al guardar setlist:', err);
+      console.error('Error inesperado al guardar setlist:', err);
+      alert('Error de conexión al intentar guardar.');
     } finally {
       setCargandoSetlist(false);
     }
@@ -515,9 +539,11 @@ function App() {
         .eq('id', setlistSeleccionadoId)
         .eq('user_id', user.id);
 
-      if (!error) {
+      if (error) {
+        alert(`Error al eliminar: ${error.message}`);
+      } else {
         seleccionarSetlist('nuevo');
-        cargarSetlistsBanda(bandaSeleccionadaId);
+        await cargarSetlistsBanda(bandaSeleccionadaId);
       }
     } catch (err) {
       console.error('Error al eliminar setlist:', err);
@@ -704,12 +730,7 @@ function App() {
       const reader = new FileReader();
       reader.onload = (uploadEvent) => {
         const dataUrl = uploadEvent.target.result;
-        const img = new Image();
-        img.onload = () => {
-          setLogoDimensions({ width: img.width, height: img.height });
-          setLogoUrl(dataUrl);
-        };
-        img.src = dataUrl;
+        setLogoUrl(dataUrl);
       };
       reader.readAsDataURL(file);
     }
@@ -888,20 +909,23 @@ function App() {
   const setlistRenderizado = obtenerSetlistConNumeros();
   const tiempoTotalShow = calcularTiempoTotal();
 
+  // Generación de PDF calculando la relación de aspecto exacta para evitar deformación del logo
   const procesarPDF = (accion) => {
     const elemento = document.getElementById('setlist-pdf-contenedor');
     
-    let logoWidth = 0;
-    const logoHeight = 20; 
+    let logoHeight = 20; // Alto por defecto en mm
+    let logoWidth = 30;  // Ancho fallback
     let textStartX = 10;
 
     if (logoUrl) {
-      if (logoDimensions.height > 0) {
+      if (logoDimensions.height > 0 && logoDimensions.width > 0) {
         const ratio = logoDimensions.width / logoDimensions.height;
         logoWidth = logoHeight * ratio;
-        if (logoWidth > 55) logoWidth = 55;
-      } else {
-        logoWidth = 30;
+        // Si el logo es sumamente horizontal, acotamos el ancho a 55mm y recalculamos el alto proporcional
+        if (logoWidth > 55) {
+          logoWidth = 55;
+          logoHeight = 55 / ratio;
+        }
       }
       textStartX = 10 + logoWidth + 5;
     } else if (nombreBanda.trim()) {
@@ -1232,7 +1256,7 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <h2 className="section-title-right" style={{ margin: 0 }}>{t.upcomingShowTitle}</h2>
             
-            {/* Selector de Setlists (Fase 4) */}
+            {/* Selector de Setlists */}
             {user && bandaSeleccionadaId !== 'nueva' && (
               <select 
                 value={setlistSeleccionadoId}
@@ -1673,7 +1697,7 @@ function App() {
             </div>
           </div>
 
-          {/* 4. GUARDAR / ELIMINAR SETLIST EN NUBE (FASE 4) */}
+          {/* 4. GUARDAR / ELIMINAR SETLIST EN NUBE */}
           {user && bandaSeleccionadaId !== 'nueva' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
               <button 
