@@ -191,7 +191,7 @@ const translations = {
     lineSpacing: 'Line Spacing:',
     fontSize: 'Font Size:',
     downloadBtn: 'DOWNLOAD',
-    closeBtn: '✕ CERRAR',
+    closeBtn: '✕ CLOSE',
     generatingPreview: 'Generating PDF... ⏳',
 
     navMyBand: 'My Band',
@@ -896,21 +896,18 @@ function App() {
   const setlistRenderizado = obtenerSetlistConNumeros();
   const tiempoTotalShow = calcularTiempoTotal();
 
-  // Exportar deshabilitando temporalmente la escala CSS para evitar la hoja en blanco
+  // Exportar capturando el nodo montado en el DOM raíz fuera del modal
   const procesarPDF = () => {
-    const elemento = document.getElementById('setlist-pdf-a4-hoja');
+    const elemento = document.getElementById('setlist-pdf-export-root');
     if (!elemento) return;
 
     setCargandoPdf(true);
-
-    const transformPrevio = elemento.style.transform;
-    elemento.style.transform = 'none';
 
     const opciones = {
       margin:       0,
       filename:     `Setlist-${venue ? venue.trim().replace(/\s+/g, '_') + '-' : ''}${fecha || 'Show'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
+      html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0, windowWidth: 794 },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak:    { mode: 'avoid-all' }
     };
@@ -920,12 +917,10 @@ function App() {
       .from(elemento)
       .save()
       .then(() => {
-        elemento.style.transform = transformPrevio;
         setCargandoPdf(false);
       })
       .catch((err) => {
         console.error("Error exportando PDF:", err);
-        elemento.style.transform = transformPrevio;
         setCargandoPdf(false);
       });
   };
@@ -943,6 +938,109 @@ function App() {
     if (item.esCancionExtra) return '4px solid #9030fd'; 
     return 'none';
   };
+
+  // Componente interno reutilizable para renderizar la Hoja A4
+  const RenderHojaA4 = () => (
+    <div 
+      style={{ 
+        width: '794px',
+        height: '1123px',
+        backgroundColor: '#ffffff', 
+        color: '#000000', 
+        fontFamily: 'Arial, sans-serif', 
+        padding: '40px 40px 30px 40px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between'
+      }}
+    >
+      {/* Bloque Superior e Intermedio */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        
+        {/* Encabezado A4: Logo Izquierda | Info Derecha */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '25px', minHeight: '80px' }}>
+          <div style={{ width: '55%', display: 'flex', alignItems: 'center' }}>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Logo Banda" 
+                style={{ maxHeight: '75px', maxWidth: '100%', objectFit: 'contain' }} 
+              />
+            ) : nombreBanda.trim() ? (
+              <h1 style={{ margin: 0, fontSize: '24px', fontStyle: 'italic', textTransform: 'uppercase' }}>{nombreBanda.trim()}</h1>
+            ) : (
+              <div />
+            )}
+          </div>
+
+          <div style={{ width: '45%', textAlign: 'right', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.5' }}>
+            <div>{idioma === 'en' ? 'Date' : 'Fecha'}: {fecha || '_____'}</div>
+            <div>{idioma === 'en' ? 'Venue' : 'Lugar'}: {venue || '_____'}</div>
+            <div>{idioma === 'en' ? 'City' : 'Ciudad'}: {ciudad || '_____'}</div>
+          </div>
+        </div>
+
+        {/* Canciones */}
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          {setlistRenderizado.map((item) => (
+            <div 
+              key={item.idSetlist} 
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                borderTop: item.esEspecial ? '1px solid #666' : 'none',
+                borderBottom: item.esEspecial ? '1px solid #666' : 'none',
+                paddingTop: item.esEspecial ? '6px' : '0',
+                paddingBottom: item.esEspecial ? '6px' : '0',
+                marginBottom: `${espaciadoPdf}px`
+              }}
+            >
+              {item.esTextoLibre ? (
+                <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '6px' }}>
+                  {item.nombre}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                  <div style={{ width: `${Math.max(45, tamanoFuentePdf * 1.6)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
+                    {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
+                  </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                    <span style={{ 
+                      fontSize: `${tamanoFuentePdf}px`, 
+                      fontWeight: item.esEspecial ? 'normal' : 'bold', 
+                      textTransform: item.esEspecial ? 'none' : 'uppercase', 
+                      fontStyle: item.esEspecial ? 'italic' : 'normal' 
+                    }}>
+                      {item.nombre} {item.enganchada && '>'}
+                    </span>
+
+                    {item.notas && (
+                      <span style={{ 
+                        fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
+                        color: '#555', 
+                        fontStyle: 'italic',
+                        fontWeight: 'normal'
+                      }}>
+                        ({item.notas})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+      </div>
+
+      {/* Pie de Hoja A4 fijo al fondo */}
+      <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px', minHeight: '20px' }}>
+        {contactoRedes.trim()}
+      </div>
+    </div>
+  );
 
   return (
     <div className="app-container">
@@ -1704,113 +1802,8 @@ function App() {
                   position: 'relative'
                 }}
               >
-                {/* Hoja A4 con Flexbox para forzar el pie abajo del todo */}
-                <div 
-                  id="setlist-pdf-a4-hoja"
-                  style={{ 
-                    width: '794px',
-                    height: '1123px',
-                    backgroundColor: '#ffffff', 
-                    color: '#000000', 
-                    fontFamily: 'Arial, sans-serif', 
-                    padding: '40px 40px 30px 40px',
-                    boxSizing: 'border-box',
-                    boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-                    transform: `scale(${scaleFactor})`,
-                    transformOrigin: 'top left',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  {/* Bloque Superior e Intermedio */}
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    
-                    {/* Encabezado A4: Logo Izquierda | Info Derecha */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '25px', minHeight: '80px' }}>
-                      <div style={{ width: '55%', display: 'flex', alignItems: 'center' }}>
-                        {logoUrl ? (
-                          <img 
-                            src={logoUrl} 
-                            alt="Logo Banda" 
-                            style={{ maxHeight: '75px', maxWidth: '100%', objectFit: 'contain' }} 
-                          />
-                        ) : nombreBanda.trim() ? (
-                          <h1 style={{ margin: 0, fontSize: '24px', fontStyle: 'italic', textTransform: 'uppercase' }}>{nombreBanda.trim()}</h1>
-                        ) : (
-                          <div />
-                        )}
-                      </div>
-
-                      <div style={{ width: '45%', textAlign: 'right', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.5' }}>
-                        <div>{idioma === 'en' ? 'Date' : 'Fecha'}: {fecha || '_____'}</div>
-                        <div>{idioma === 'en' ? 'Venue' : 'Lugar'}: {venue || '_____'}</div>
-                        <div>{idioma === 'en' ? 'City' : 'Ciudad'}: {ciudad || '_____'}</div>
-                      </div>
-                    </div>
-
-                    {/* Canciones */}
-                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      {setlistRenderizado.map((item) => (
-                        <div 
-                          key={item.idSetlist} 
-                          style={{ 
-                            display: 'flex', 
-                            flexDirection: 'column',
-                            borderTop: item.esEspecial ? '1px solid #666' : 'none',
-                            borderBottom: item.esEspecial ? '1px solid #666' : 'none',
-                            paddingTop: item.esEspecial ? '6px' : '0',
-                            paddingBottom: item.esEspecial ? '6px' : '0',
-                            marginBottom: `${espaciadoPdf}px`
-                          }}
-                        >
-                          {item.esTextoLibre ? (
-                            <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '6px' }}>
-                              {item.nombre}
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                              <div style={{ width: `${Math.max(45, tamanoFuentePdf * 1.6)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
-                                {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
-                              </div>
-                              
-                              <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                                <span style={{ 
-                                  fontSize: `${tamanoFuentePdf}px`, 
-                                  fontWeight: item.esEspecial ? 'normal' : 'bold', 
-                                  textTransform: item.esEspecial ? 'none' : 'uppercase', 
-                                  fontStyle: item.esEspecial ? 'italic' : 'normal' 
-                                }}>
-                                  {item.nombre} {item.enganchada && '>'}
-                                </span>
-
-                                {item.notas && (
-                                  <span style={{ 
-                                    fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
-                                    color: '#555', 
-                                    fontStyle: 'italic',
-                                    fontWeight: 'normal'
-                                  }}>
-                                    ({item.notas})
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                  </div>
-
-                  {/* Pie de Hoja A4 fijo al fondo */}
-                  <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px', minHeight: '20px' }}>
-                    {contactoRedes.trim()}
-                  </div>
-
+                <div style={{ transform: `scale(${scaleFactor})`, transformOrigin: 'top left', position: 'absolute', top: 0, left: 0, boxShadow: '0 0 10px rgba(0,0,0,0.3)' }}>
+                  <RenderHojaA4 />
                 </div>
               </div>
 
@@ -1819,6 +1812,13 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* NODO OCULTO EN EL DOM RAÍZ PARA EXPORTACIÓN LIMPIA EN PDF SIN ERRORES DE HOJA EN BLANCO */}
+      <div style={{ position: 'fixed', top: 0, left: '-9999px', zIndex: -1000, pointerEvents: 'none', opacity: 1 }}>
+        <div id="setlist-pdf-export-root">
+          <RenderHojaA4 />
+        </div>
+      </div>
 
       {/* MODAL DE BIENVENIDA */}
       {mostrarBienvenida && (
