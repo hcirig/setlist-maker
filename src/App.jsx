@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import html2pdf from 'html2pdf.js'
+import { supabase } from './supabaseClient'
 import './App.css'
 
 const translations = {
@@ -76,7 +77,18 @@ const translations = {
     navPanel: 'Panel de Control',
 
     defaultSetText: 'SET 1',
-    untitledSong: 'Canción sin título'
+    untitledSong: 'Canción sin título',
+
+    // Nuevas traducciones de Autenticación
+    loginGoogle: 'Iniciar sesión con Google',
+    logout: 'Cerrar sesión',
+    welcomeTitle: '¡Bienvenido a Setlist Creator!',
+    welcomeSub: 'Crea setlists profesionales para tu banda, calcula la duración exacta de tu show y exporta PDFs en segundos.',
+    enterGuest: 'Continuar como invitado',
+    onboardingTitle: '¡Empecemos!',
+    onboardingSub: 'Para comenzar, ingresa el nombre de tu primera banda:',
+    onboardingBtn: 'Guardar y empezar',
+    guestMode: 'Modo Invitado'
   },
   en: {
     themeDark: 'Dark',
@@ -151,7 +163,17 @@ const translations = {
     navPanel: 'Control Panel',
 
     defaultSetText: 'SET 1',
-    untitledSong: 'Untitled Song'
+    untitledSong: 'Untitled Song',
+
+    loginGoogle: 'Sign in with Google',
+    logout: 'Sign out',
+    welcomeTitle: 'Welcome to Setlist Creator!',
+    welcomeSub: 'Build professional setlists for your band, calculate exact show durations, and export PDFs in seconds.',
+    enterGuest: 'Continue as guest',
+    onboardingTitle: "Let's get started!",
+    onboardingSub: "Enter your first band's name to begin:",
+    onboardingBtn: 'Save & start',
+    guestMode: 'Guest Mode'
   }
 };
 
@@ -179,6 +201,14 @@ function App() {
   const [tema, setTema] = useState('dark');
   const [idioma, setIdioma] = useState('es');
   const t = translations[idioma];
+
+  // Estados de Autenticación y Modal
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+  const [mostrarBienvenida, setMostrarBienvenida] = useState(false);
+  const [mostrarOnboarding, setMostrarOnboarding] = useState(false);
+  const [nombrePrimeraBanda, setNombrePrimeraBanda] = useState('');
+  const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
 
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
@@ -210,6 +240,90 @@ function App() {
 
   const dragItem = useRef();
   const dragOverItem = useRef();
+
+  // Escuchar cambios de autenticación
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (!session) {
+        const invitadoPrevio = localStorage.getItem('setlist_guest_session');
+        if (!invitadoPrevio) {
+          setMostrarBienvenida(true);
+        }
+      } else {
+        comprobarBandasExistentes(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session) {
+        setMostrarBienvenida(false);
+        comprobarBandasExistentes(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const comprobarBandasExistentes = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('bandas')
+        .select('id, nombre')
+        .eq('user_id', userId);
+
+      if (!error && data && data.length === 0) {
+        setMostrarOnboarding(true);
+      }
+    } catch (err) {
+      console.error("Error al verificar bandas:", err);
+    }
+  };
+
+  const handleLoginGoogle = async () => {
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+    } catch (error) {
+      console.error("Error al iniciar sesión con Google:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setMenuUsuarioAbierto(false);
+    localStorage.removeItem('setlist_guest_session');
+    setMostrarBienvenida(true);
+  };
+
+  const continuarComoInvitado = () => {
+    localStorage.setItem('setlist_guest_session', 'true');
+    setMostrarBienvenida(false);
+  };
+
+  const guardarOnboardingBanda = async () => {
+    if (!nombrePrimeraBanda.trim() || !user) return;
+    try {
+      const { error } = await supabase.from('bandas').insert({
+        user_id: user.id,
+        nombre: nombrePrimeraBanda.trim()
+      });
+
+      if (!error) {
+        setNombreBanda(nombrePrimeraBanda.trim());
+        setMostrarOnboarding(false);
+      }
+    } catch (err) {
+      console.error("Error al crear primera banda:", err);
+    }
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', tema);
@@ -581,23 +695,62 @@ function App() {
       {/* HEADER CON BOTONES SUPERIORES Y LOGO */}
       <header className="app-header">
         <div className="header-top-bar">
-          <button 
-            onClick={toggleTheme} 
-            className="btn-header-action" 
-            title={tema === 'dark' ? 'Cambiar a Tema Claro' : 'Switch to Dark Theme'}
-          >
-            <i className={tema === 'dark' ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
-            <span>{tema === 'dark' ? t.themeLight : t.themeDark}</span>
-          </button>
+          
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={toggleTheme} 
+              className="btn-header-action" 
+              title={tema === 'dark' ? 'Cambiar a Tema Claro' : 'Switch to Dark Theme'}
+            >
+              <i className={tema === 'dark' ? "fa-solid fa-sun" : "fa-solid fa-moon"}></i>
+              <span>{tema === 'dark' ? t.themeLight : t.themeDark}</span>
+            </button>
 
-          <button 
-            onClick={toggleIdioma} 
-            className="btn-header-action" 
-            title={idioma === 'es' ? 'Switch to English' : 'Cambiar a Español'}
-          >
-            <i className="fa-solid fa-globe"></i>
-            <span>{idioma === 'es' ? 'EN' : 'ES'}</span>
-          </button>
+            <button 
+              onClick={toggleIdioma} 
+              className="btn-header-action" 
+              title={idioma === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+            >
+              <i className="fa-solid fa-globe"></i>
+              <span>{idioma === 'es' ? 'EN' : 'ES'}</span>
+            </button>
+          </div>
+
+          {/* Menú de Autenticación / Usuario */}
+          {session ? (
+            <div className="user-menu-container">
+              <button 
+                className="user-avatar-btn"
+                onClick={() => setMenuUsuarioAbierto(!menuUsuarioAbierto)}
+              >
+                <img 
+                  src={user?.user_metadata?.avatar_url || 'https://via.placeholder.com/28'} 
+                  alt={user?.user_metadata?.full_name || 'Usuario'} 
+                />
+                <span>{user?.user_metadata?.full_name?.split(' ')[0] || 'Mi Cuenta'}</span>
+                <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.8em' }}></i>
+              </button>
+
+              {menuUsuarioAbierto && (
+                <div className="user-dropdown-menu">
+                  <div style={{ padding: '8px 16px', fontSize: '0.8em', color: 'var(--text-muted)' }}>
+                    {user?.email}
+                  </div>
+                  <div className="user-dropdown-divider"></div>
+                  <button className="user-dropdown-item" onClick={handleLogout} style={{ color: 'var(--btn-danger)' }}>
+                    <i className="fa-solid fa-right-from-bracket"></i>
+                    <span>{t.logout}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={handleLoginGoogle} className="btn-google" style={{ height: '36px', padding: '0 16px', width: 'auto', fontSize: '0.85em' }}>
+              <i className="fa-brands fa-google"></i>
+              <span>{t.loginGoogle}</span>
+            </button>
+          )}
+
         </div>
 
         <img 
@@ -606,7 +759,6 @@ function App() {
           alt="Setlist Creator" 
           className="header-banner"
           onError={(e) => {
-            // Si no existe header-logo-light.png se prueba con header-logo.png
             if (e.target.src.includes('header-logo-light.png')) {
               e.target.src = '/header-logo.png';
               return;
@@ -1207,6 +1359,53 @@ function App() {
               {t.pdfMobileNotice}<a href={pdfUrl} target="_blank" rel="noreferrer" style={{color: 'var(--btn-blue)', textDecoration: 'underline'}}>{t.pdfMobileNoticeLink}</a>.
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE BIENVENIDA */}
+      {mostrarBienvenida && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h2 className="modal-title">{t.welcomeTitle}</h2>
+            <p className="modal-subtitle">{t.welcomeSub}</p>
+            
+            <button onClick={handleLoginGoogle} className="btn-google">
+              <i className="fa-brands fa-google"></i>
+              <span>{t.loginGoogle}</span>
+            </button>
+
+            <button onClick={continuarComoInvitado} className="btn-guest">
+              {t.enterGuest}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE ONBOARDING (PRIMERA BANDA) */}
+      {mostrarOnboarding && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h2 className="modal-title">{t.onboardingTitle}</h2>
+            <p className="modal-subtitle">{t.onboardingSub}</p>
+
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder={t.bandNamePlaceholder} 
+              value={nombrePrimeraBanda}
+              onChange={(e) => setNombrePrimeraBanda(e.target.value)}
+              style={{ width: '100%' }}
+            />
+
+            <button 
+              onClick={guardarOnboardingBanda} 
+              disabled={!nombrePrimeraBanda.trim()} 
+              className="btn-pill"
+              style={{ width: '100%', justifyContent: 'center', opacity: nombrePrimeraBanda.trim() ? 1 : 0.6 }}
+            >
+              {t.onboardingBtn}
+            </button>
           </div>
         </div>
       )}
