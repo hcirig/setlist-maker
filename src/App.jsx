@@ -90,7 +90,7 @@ const translations = {
     fontSize: 'Fuente:',
     downloadBtn: 'DESCARGAR',
     closeBtn: '✕ CERRAR',
-    generatingPreview: 'Generando vista previa... ⏳',
+    generatingPreview: 'Generando PDF... ⏳',
 
     navMyBand: 'Mi Banda',
     navUpcomingShow: 'Próximo Show',
@@ -191,8 +191,8 @@ const translations = {
     lineSpacing: 'Line Spacing:',
     fontSize: 'Font Size:',
     downloadBtn: 'DOWNLOAD',
-    closeBtn: '✕ CLOSE',
-    generatingPreview: 'Generating preview... ⏳',
+    closeBtn: '✕ CERRAR',
+    generatingPreview: 'Generating PDF... ⏳',
 
     navMyBand: 'My Band',
     navUpcomingShow: 'Upcoming Show',
@@ -248,7 +248,7 @@ const formatearTiempoTotal = (segundosTotales) => {
 
 const limpiarTituloCancion = (nombreOriginal) => {
   if (!nombreOriginal) return '';
-  const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster|remastered|version|edit|mix|live|deluxe|bonus|track|anniversary|single|mono|stereo|digital|take|demo|edition)\b.*?[\)\]\}]/gi;
+  const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster\vert{}remastered\vert{}version\vert{}edit\vert{}mix\vert{}live\vert{}deluxe\vert{}bonus\vert{}track\vert{}anniversary\vert{}single\vert{}mono\vert{}stereo\vert{}digital\vert{}take\vert{}demo\vert{}edition)\b.*?[\)\]\}]/gi;
   let tituloLimpio = nombreOriginal.replace(patronInnecesario, '');
   return tituloLimpio.replace(/\s+/g, ' ').trim();
 };
@@ -315,8 +315,8 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       if (previewContainerRef.current) {
-        const containerWidth = previewContainerRef.current.clientWidth - 20; // 20px padding
-        const a4WidthPx = 794; // Ancho A4 en píxeles (~210mm a 96DPI)
+        const containerWidth = previewContainerRef.current.clientWidth - 20;
+        const a4WidthPx = 794;
         if (containerWidth < a4WidthPx) {
           setScaleFactor(containerWidth / a4WidthPx);
         } else {
@@ -896,10 +896,15 @@ function App() {
   const setlistRenderizado = obtenerSetlistConNumeros();
   const tiempoTotalShow = calcularTiempoTotal();
 
-  // Exportar el elemento visual exactamente igual a la vista previa
+  // Exportar deshabilitando temporalmente la escala CSS para evitar la hoja en blanco
   const procesarPDF = () => {
-    setCargandoPdf(true);
     const elemento = document.getElementById('setlist-pdf-a4-hoja');
+    if (!elemento) return;
+
+    setCargandoPdf(true);
+
+    const transformPrevio = elemento.style.transform;
+    elemento.style.transform = 'none';
 
     const opciones = {
       margin:       0,
@@ -914,9 +919,13 @@ function App() {
       .set(opciones)
       .from(elemento)
       .save()
-      .then(() => setCargandoPdf(false))
+      .then(() => {
+        elemento.style.transform = transformPrevio;
+        setCargandoPdf(false);
+      })
       .catch((err) => {
         console.error("Error exportando PDF:", err);
+        elemento.style.transform = transformPrevio;
         setCargandoPdf(false);
       });
   };
@@ -1052,7 +1061,6 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <h2 className="section-title-right" style={{ margin: 0 }}>{t.myBandTitle}</h2>
             
-            {/* Selector de Bandas */}
             {user && (
               <select 
                 value={bandaSeleccionadaId}
@@ -1640,7 +1648,7 @@ function App() {
 
       </main>
 
-      {/* POPUP / MODAL DE VISTA PREVIA CON ESCALA ADAPTATIVA A4 */}
+      {/* POPUP / MODAL DE VISTA PREVIA CON HOJA A4 CON FLEX-COLUMN */}
       {mostrarPreview && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
           
@@ -1686,7 +1694,7 @@ function App() {
               </div>
             </div>
 
-            {/* ÁREA DE VISUALIZACIÓN PROPORCIONAL A4 */}
+            {/* ÁREA DE VISUALIZACIÓN A4 */}
             <div ref={previewContainerRef} style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', padding: '15px 10px', overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
               
               <div 
@@ -1696,7 +1704,7 @@ function App() {
                   position: 'relative'
                 }}
               >
-                {/* Hoja A4 exacta capturada por html2pdf */}
+                {/* Hoja A4 con Flexbox para forzar el pie abajo del todo */}
                 <div 
                   id="setlist-pdf-a4-hoja"
                   style={{ 
@@ -1715,11 +1723,13 @@ function App() {
                     left: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    justify: 'space-between'
+                    justifyContent: 'space-between'
                   }}
                 >
-                  <div>
-                    {/* Encabezado A4: Logo a la Izquierda | Info a la Derecha */}
+                  {/* Bloque Superior e Intermedio */}
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    
+                    {/* Encabezado A4: Logo Izquierda | Info Derecha */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '25px', minHeight: '80px' }}>
                       <div style={{ width: '55%', display: 'flex', alignItems: 'center' }}>
                         {logoUrl ? (
@@ -1743,7 +1753,7 @@ function App() {
                     </div>
 
                     {/* Canciones */}
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                       {setlistRenderizado.map((item) => (
                         <div 
                           key={item.idSetlist} 
@@ -1793,14 +1803,13 @@ function App() {
                         </div>
                       ))}
                     </div>
+
                   </div>
 
-                  {/* Pie de Hoja A4 */}
-                  {contactoRedes.trim() && (
-                    <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px' }}>
-                      {contactoRedes.trim()}
-                    </div>
-                  )}
+                  {/* Pie de Hoja A4 fijo al fondo */}
+                  <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px', minHeight: '20px' }}>
+                    {contactoRedes.trim()}
+                  </div>
 
                 </div>
               </div>
