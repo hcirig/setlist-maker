@@ -91,8 +91,6 @@ const translations = {
     downloadBtn: 'DESCARGAR',
     closeBtn: '✕ CERRAR',
     generatingPreview: 'Generando vista previa... ⏳',
-    pdfMobileNotice: '* Si la hoja no se muestra correctamente en tu celular, ',
-    pdfMobileNoticeLink: 'tocá acá para verla en otra pestaña',
 
     navMyBand: 'Mi Banda',
     navUpcomingShow: 'Próximo Show',
@@ -195,8 +193,6 @@ const translations = {
     downloadBtn: 'DOWNLOAD',
     closeBtn: '✕ CLOSE',
     generatingPreview: 'Generating preview... ⏳',
-    pdfMobileNotice: "* If the document doesn't display properly on mobile, ",
-    pdfMobileNoticeLink: 'click here to open in another tab',
 
     navMyBand: 'My Band',
     navUpcomingShow: 'Upcoming Show',
@@ -270,13 +266,13 @@ function App() {
   const [nombrePrimeraBanda, setNombrePrimeraBanda] = useState('');
   const [menuUsuarioAbierto, setMenuUsuarioAbierto] = useState(false);
 
-  // Estados de Gestión de Bandas (Fase 3)
+  // Estados de Gestión de Bandas
   const [misBandas, setMisBandas] = useState([]);
   const [bandaSeleccionadaId, setBandaSeleccionadaId] = useState('nueva');
   const [cargandoBanda, setCargandoBanda] = useState(false);
   const [archivoLogo, setArchivoLogo] = useState(null);
 
-  // Estados de Gestión de Setlists (Fase 4)
+  // Estados de Gestión de Setlists
   const [misSetlists, setMisSetlists] = useState([]);
   const [setlistSeleccionadoId, setSetlistSeleccionadoId] = useState('nuevo');
   const [cargandoSetlist, setCargandoSetlist] = useState(false);
@@ -294,7 +290,6 @@ function App() {
   const [espaciadoPdf, setEspaciadoPdf] = useState(18);
   const [tamanoFuentePdf, setTamanoFuentePdf] = useState(28);
   const [mostrarPreview, setMostrarPreview] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState(null);
   const [cargandoPdf, setCargandoPdf] = useState(false);
 
   const [tipoEspecial, setTipoEspecial] = useState("Speech");
@@ -309,10 +304,33 @@ function App() {
   const [ciudad, setCiudad] = useState("");
   const [contactoRedes, setContactoRedes] = useState("");
   const [logoUrl, setLogoUrl] = useState(null);
-  const [logoDimensions, setLogoDimensions] = useState({ width: 0, height: 0 });
+
+  const [scaleFactor, setScaleFactor] = useState(1);
+  const previewContainerRef = useRef(null);
 
   const dragItem = useRef();
   const dragOverItem = useRef();
+
+  // Escalar proporcionalmente la hoja A4 según el ancho disponible de pantalla en móviles
+  useEffect(() => {
+    const handleResize = () => {
+      if (previewContainerRef.current) {
+        const containerWidth = previewContainerRef.current.clientWidth - 20; // 20px padding
+        const a4WidthPx = 794; // Ancho A4 en píxeles (~210mm a 96DPI)
+        if (containerWidth < a4WidthPx) {
+          setScaleFactor(containerWidth / a4WidthPx);
+        } else {
+          setScaleFactor(1);
+        }
+      }
+    };
+
+    if (mostrarPreview) {
+      handleResize();
+      window.addEventListener('resize', handleResize);
+    }
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mostrarPreview]);
 
   // Escuchar cambios de autenticación
   useEffect(() => {
@@ -397,7 +415,6 @@ function App() {
     }
   };
 
-  // Cargar lista de setlists de la banda activa desde Supabase
   const cargarSetlistsBanda = async (bandaId) => {
     if (!bandaId || bandaId === 'nueva' || !user) return;
     try {
@@ -417,7 +434,6 @@ function App() {
     }
   };
 
-  // Seleccionar y cargar un setlist guardado
   const seleccionarSetlist = (setlistObj) => {
     if (!setlistObj || setlistObj === 'nuevo') {
       setSetlistSeleccionadoId('nuevo');
@@ -436,7 +452,6 @@ function App() {
     }
   };
 
-  // Guardar o Actualizar Setlist en Supabase con reporte explícito de errores
   const guardarSetlistDB = async (esGuardarComo = false) => {
     if (!user) {
       alert("Debes iniciar sesión para guardar setlists en la nube.");
@@ -458,7 +473,6 @@ function App() {
     setCargandoSetlist(true);
     try {
       if (!esGuardarComo && setlistSeleccionadoId !== 'nuevo') {
-        // ACTUALIZAR EXISTENTE
         const { error } = await supabase
           .from('setlists')
           .update({
@@ -480,7 +494,6 @@ function App() {
           await cargarSetlistsBanda(bandaSeleccionadaId);
         }
       } else {
-        // INSERTAR NUEVO O "GUARDAR COMO..."
         const { data, error } = await supabase
           .from('setlists')
           .insert({
@@ -513,7 +526,6 @@ function App() {
     }
   };
 
-  // Eliminar Setlist de Supabase
   const eliminarSetlistDB = async () => {
     if (setlistSeleccionadoId === 'nuevo' || !user) return;
     if (!window.confirm(t.confirmDeleteSetlist)) return;
@@ -662,17 +674,6 @@ function App() {
     document.documentElement.setAttribute('data-theme', tema);
   }, [tema]);
 
-  useEffect(() => {
-    let timeoutId;
-    if (mostrarPreview) {
-      setCargandoPdf(true);
-      timeoutId = setTimeout(() => {
-        procesarPDF('preview');
-      }, 600);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [mostrarPreview, espaciadoPdf, tamanoFuentePdf, idioma]);
-
   const toggleTheme = () => {
     setTema(prev => prev === 'dark' ? 'light' : 'dark');
   };
@@ -726,7 +727,6 @@ function App() {
   const quitarLogo = () => {
     setLogoUrl(null);
     setArchivoLogo(null);
-    setLogoDimensions({ width: 0, height: 0 });
   };
 
   const agruparPorDisco = () => {
@@ -896,115 +896,28 @@ function App() {
   const setlistRenderizado = obtenerSetlistConNumeros();
   const tiempoTotalShow = calcularTiempoTotal();
 
-  // Generación de PDF calculando la relación de aspecto exacta para evitar deformación del logo
-  const procesarPDF = (accion) => {
-    const elemento = document.getElementById('setlist-pdf-contenedor');
-    
-    let logoHeight = 20; // Alto por defecto en mm
-    let logoWidth = 30;  // Ancho fallback
-    let textStartX = 10;
-
-    if (logoUrl) {
-      if (logoDimensions.height > 0 && logoDimensions.width > 0) {
-        const ratio = logoDimensions.width / logoDimensions.height;
-        logoWidth = logoHeight * ratio;
-        // Si el logo es sumamente horizontal, acotamos el ancho a 55mm y recalculamos el alto proporcional
-        if (logoWidth > 55) {
-          logoWidth = 55;
-          logoHeight = 55 / ratio;
-        }
-      }
-      textStartX = 10 + logoWidth + 5;
-    } else if (nombreBanda.trim()) {
-      const textoBanda = nombreBanda.trim().toUpperCase();
-      const anchoEstimado = Math.min(80, Math.max(35, textoBanda.length * 4.2));
-      textStartX = 10 + anchoEstimado + 5;
-    }
+  // Exportar el elemento visual exactamente igual a la vista previa
+  const procesarPDF = () => {
+    setCargandoPdf(true);
+    const elemento = document.getElementById('setlist-pdf-a4-hoja');
 
     const opciones = {
-      margin:       [35, 10, 15, 10], 
+      margin:       0,
       filename:     `Setlist-${venue ? venue.trim().replace(/\s+/g, '_') + '-' : ''}${fecha || 'Show'}.pdf`,
       image:        { type: 'jpeg', quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
       jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: 'avoid-all' } 
+      pagebreak:    { mode: 'avoid-all' }
     };
 
     html2pdf()
       .set(opciones)
       .from(elemento)
-      .toPdf()
-      .get('pdf')
-      .then(function (pdf) {
-        const totalPages = pdf.internal.getNumberOfPages();
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-
-        const labelFecha = idioma === 'en' ? 'Date' : 'Fecha';
-        const labelLugar = idioma === 'en' ? 'Venue' : 'Lugar';
-        const labelCiudad = idioma === 'en' ? 'City' : 'Ciudad';
-
-        let fechaStr = `${labelFecha}: _____`;
-        if (fecha) {
-          const partes = fecha.split('-'); 
-          if (partes.length === 3) {
-            fechaStr = `${labelFecha}: ${partes[2]}/${partes[1]}/${partes[0]}`; 
-          }
-        }
-
-        const venueStr = `${labelLugar}: ${venue ? venue : '_____'}`;
-        const ciudadStr = `${labelCiudad}: ${ciudad ? ciudad : '_____'}`;
-
-        for (let i = 1; i <= totalPages; i++) {
-          pdf.setPage(i);
-
-          if (logoUrl) {
-            try {
-              let imgFormat = 'PNG';
-              if (logoUrl.startsWith('data:image/jpeg') || logoUrl.startsWith('data:image/jpg')) {
-                imgFormat = 'JPEG';
-              } else if (logoUrl.startsWith('data:image/webp')) {
-                imgFormat = 'WEBP';
-              }
-              pdf.addImage(logoUrl, imgFormat, 10, 10, logoWidth, logoHeight);
-            } catch (e) {
-              console.warn("No se pudo insertar el logo en el PDF", e);
-            }
-          } else if (nombreBanda.trim()) {
-            pdf.setFontSize(18);
-            pdf.setFont("helvetica", "bolditalic");
-            pdf.text(nombreBanda.trim().toUpperCase(), 10, 20);
-          }
-
-          pdf.setFontSize(12);
-          pdf.setFont("helvetica", "bold");
-          pdf.text(fechaStr, textStartX, 15);
-          pdf.text(venueStr, textStartX, 21);
-          pdf.text(ciudadStr, textStartX, 27);
-
-          pdf.setLineWidth(0.8);
-          pdf.line(10, 32, pageWidth - 10, 32);
-
-          pdf.setLineWidth(0.5);
-          pdf.line(10, pageHeight - 12, pageWidth - 10, pageHeight - 12);
-
-          if (contactoRedes.trim()) {
-            pdf.setFontSize(11);
-            pdf.setFont("helvetica", "normal");
-            pdf.text(contactoRedes.trim(), pageWidth / 2, pageHeight - 7, { align: 'center' });
-          }
-        }
-
-        if (accion === 'preview') {
-          const blobUrl = pdf.output('bloburl');
-          setPdfUrl(oldUrl => {
-            if (oldUrl) URL.revokeObjectURL(oldUrl); 
-            return blobUrl;
-          });
-          setCargandoPdf(false);
-        } else {
-          pdf.save(opciones.filename);
-        }
+      .save()
+      .then(() => setCargandoPdf(false))
+      .catch((err) => {
+        console.error("Error exportando PDF:", err);
+        setCargandoPdf(false);
       });
   };
 
@@ -1163,7 +1076,6 @@ function App() {
             )}
           </div>
           
-          {/* Campo Nombre ocupando el 100% */}
           <div className="field-group">
             <label className="field-label">{t.bandNameLabel}</label>
             <input 
@@ -1176,7 +1088,6 @@ function App() {
             />
           </div>
 
-          {/* Fila separada para el Logo */}
           <div className="field-group">
             <label className="field-label">{t.logoLabel}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -1212,7 +1123,6 @@ function App() {
             </div>
           </div>
 
-          {/* Redes / Contacto */}
           <div className="field-group">
             <label className="field-label">{t.socialContactLabel}</label>
             <input 
@@ -1224,7 +1134,6 @@ function App() {
             />
           </div>
 
-          {/* Botón Guardar / Actualizar Banda */}
           {user && (
             <button 
               onClick={guardarBandaDB}
@@ -1243,7 +1152,6 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <h2 className="section-title-right" style={{ margin: 0 }}>{t.upcomingShowTitle}</h2>
             
-            {/* Selector de Setlists */}
             {user && bandaSeleccionadaId !== 'nueva' && (
               <select 
                 value={setlistSeleccionadoId}
@@ -1576,7 +1484,6 @@ function App() {
             {t.controlPanelTitle}
           </h2>
           
-          {/* 1. PAUSA ENTRE TEMAS */}
           <div className="panel-subcard">
             <label className="field-label">{t.gapLabel}</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1591,7 +1498,6 @@ function App() {
             </div>
           </div>
 
-          {/* 2. FILA ESPECIAL */}
           <div className="panel-subcard">
             <h2 className="section-title-right" style={{ fontSize: '0.95em', margin: '0 0 10px 0' }}>
               {t.specialRowTitle}
@@ -1676,7 +1582,6 @@ function App() {
             </button>
           </div>
 
-          {/* 3. RELOJ / TIEMPO TOTAL ESTIMADO */}
           <div className="clock-box">
             <h3 style={{ margin: '0 0 5px 0', color: 'var(--text-muted)', fontSize: '0.85em', textTransform: 'uppercase' }}>{t.totalEstimatedTime}</h3>
             <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--btn-blue)' }}>
@@ -1684,7 +1589,6 @@ function App() {
             </div>
           </div>
 
-          {/* 4. GUARDAR / ELIMINAR SETLIST EN NUBE */}
           {user && bandaSeleccionadaId !== 'nueva' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
               <button 
@@ -1722,7 +1626,6 @@ function App() {
             </div>
           )}
 
-          {/* 5. BOTÓN EXPORTAR */}
           <button 
             onClick={() => setMostrarPreview(true)}
             disabled={setlistRenderizado.length === 0}
@@ -1737,155 +1640,176 @@ function App() {
 
       </main>
 
-{/* POPUP / MODAL DE VISTA PREVIA ADAPTADO A MÓVILES Y DESKTOP */}
-{mostrarPreview && (
-  <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
-    
-    <div style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', width: '100%', maxWidth: '850px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid var(--input-border)', color: 'var(--text-main)' }}>
-      
-      {/* Barra de Controles Superior */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap' }}>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.lineSpacing}</span>
-            <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
-            <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{espaciadoPdf}</span>
-            <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
-          </div>
+      {/* POPUP / MODAL DE VISTA PREVIA CON ESCALA ADAPTATIVA A4 */}
+      {mostrarPreview && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box' }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px', borderLeft: '1px solid var(--border-light)' }}>
-            <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.fontSize}</span>
-            <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
-            <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
-            <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
-          </div>
-        </div>
+          <div style={{ backgroundColor: 'var(--panel-bg)', padding: '15px', borderRadius: '12px', width: '100%', maxWidth: '850px', height: '95vh', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)', border: '1px solid var(--input-border)', color: 'var(--text-main)' }}>
+            
+            {/* Barra de Controles Superior */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.lineSpacing}</span>
+                  <button onClick={() => setEspaciadoPdf(Math.max(0, espaciadoPdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
+                  <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{espaciadoPdf}</span>
+                  <button onClick={() => setEspaciadoPdf(espaciadoPdf + 2)} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px', borderLeft: '1px solid var(--border-light)' }}>
+                  <span style={{ fontWeight: 'bold', fontSize: '0.85em' }}>{t.fontSize}</span>
+                  <button onClick={() => setTamanoFuentePdf(Math.max(12, tamanoFuentePdf - 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>-</button>
+                  <span style={{ fontSize: '0.95em', fontWeight: 'bold', width: '20px', textAlign: 'center' }}>{tamanoFuentePdf}</span>
+                  <button onClick={() => setTamanoFuentePdf(Math.min(60, tamanoFuentePdf + 2))} className="btn-round" style={{ width: '28px', height: '28px' }}>+</button>
+                </div>
+              </div>
 
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button 
-            onClick={() => procesarPDF('descargar')}
-            className="btn-pill"
-            style={{ height: '34px', padding: '0 12px', fontSize: '0.85em' }}
-          >
-            <i className="fa-solid fa-download"></i>
-            <span>{t.downloadBtn}</span>
-          </button>
-          
-          <button 
-            onClick={() => setMostrarPreview(false)}
-            className="btn-danger-pill"
-            style={{ height: '34px', padding: '0 10px', fontSize: '0.85em' }}
-          >
-            {t.closeBtn}
-          </button>
-        </div>
-      </div>
-
-      {/* Contenedor Interactivo de Vista Previa (Funciona 100% en Android y iOS) */}
-      <div style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', padding: '15px 5px', overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
-        <div 
-          style={{ 
-            width: '100%',
-            maxWidth: '210mm',
-            minHeight: '297mm',
-            backgroundColor: '#ffffff', 
-            color: '#000000', 
-            fontFamily: 'Arial, sans-serif', 
-            padding: '20mm 12mm 15mm 12mm',
-            boxSizing: 'border-box',
-            boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-            borderRadius: '2px',
-            transformOrigin: 'top center',
-            fontSize: '12px'
-          }}
-        >
-          {/* Encabezado Hoja A4 */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '10px', marginBottom: '20px' }}>
-            {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt="Logo" 
-                style={{ maxHeight: '22mm', maxWidth: '55mm', objectFit: 'contain' }} 
-              />
-            ) : nombreBanda.trim() ? (
-              <h1 style={{ margin: 0, fontSize: '20px', fontStyle: 'italic', textTransform: 'uppercase' }}>{nombreBanda.trim()}</h1>
-            ) : (
-              <div />
-            )}
-
-            <div style={{ textAlign: 'right', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.4' }}>
-              <div>{idioma === 'en' ? 'Date' : 'Fecha'}: {fecha || '_____'}</div>
-              <div>{idioma === 'en' ? 'Venue' : 'Lugar'}: {venue || '_____'}</div>
-              <div>{idioma === 'en' ? 'City' : 'Ciudad'}: {ciudad || '_____'}</div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button 
+                  onClick={procesarPDF}
+                  disabled={cargandoPdf}
+                  className="btn-pill"
+                  style={{ height: '34px', padding: '0 12px', fontSize: '0.85em' }}
+                >
+                  <i className="fa-solid fa-download"></i>
+                  <span>{cargandoPdf ? t.generatingPreview : t.downloadBtn}</span>
+                </button>
+                
+                <button 
+                  onClick={() => setMostrarPreview(false)}
+                  className="btn-danger-pill"
+                  style={{ height: '34px', padding: '0 10px', fontSize: '0.85em' }}
+                >
+                  {t.closeBtn}
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Listado de Canciones */}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {setlistRenderizado.map((item) => (
+            {/* ÁREA DE VISUALIZACIÓN PROPORCIONAL A4 */}
+            <div ref={previewContainerRef} style={{ flex: 1, backgroundColor: '#525659', borderRadius: '6px', padding: '15px 10px', overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+              
               <div 
-                key={item.idSetlist} 
                 style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  borderTop: item.esEspecial ? '1px solid #666' : 'none',
-                  borderBottom: item.esEspecial ? '1px solid #666' : 'none',
-                  paddingTop: item.esEspecial ? '6px' : '0',
-                  paddingBottom: item.esEspecial ? '6px' : '0',
-                  marginBottom: `${espaciadoPdf}px`
+                  width: `${794 * scaleFactor}px`, 
+                  height: `${1123 * scaleFactor}px`, 
+                  position: 'relative'
                 }}
               >
-                {item.esTextoLibre ? (
-                  <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '6px' }}>
-                    {item.nombre}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                    <div style={{ width: `${Math.max(40, tamanoFuentePdf * 1.6)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
-                      {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
-                    </div>
-                    
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                      <span style={{ 
-                        fontSize: `${tamanoFuentePdf}px`, 
-                        fontWeight: item.esEspecial ? 'normal' : 'bold', 
-                        textTransform: item.esEspecial ? 'none' : 'uppercase', 
-                        fontStyle: item.esEspecial ? 'italic' : 'normal' 
-                      }}>
-                        {item.nombre} {item.enganchada && '>'}
-                      </span>
+                {/* Hoja A4 exacta capturada por html2pdf */}
+                <div 
+                  id="setlist-pdf-a4-hoja"
+                  style={{ 
+                    width: '794px',
+                    height: '1123px',
+                    backgroundColor: '#ffffff', 
+                    color: '#000000', 
+                    fontFamily: 'Arial, sans-serif', 
+                    padding: '40px 40px 30px 40px',
+                    boxSizing: 'border-box',
+                    boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+                    transform: `scale(${scaleFactor})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justify: 'space-between'
+                  }}
+                >
+                  <div>
+                    {/* Encabezado A4: Logo a la Izquierda | Info a la Derecha */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', marginBottom: '25px', minHeight: '80px' }}>
+                      <div style={{ width: '55%', display: 'flex', alignItems: 'center' }}>
+                        {logoUrl ? (
+                          <img 
+                            src={logoUrl} 
+                            alt="Logo Banda" 
+                            style={{ maxHeight: '75px', maxWidth: '100%', objectFit: 'contain' }} 
+                          />
+                        ) : nombreBanda.trim() ? (
+                          <h1 style={{ margin: 0, fontSize: '24px', fontStyle: 'italic', textTransform: 'uppercase' }}>{nombreBanda.trim()}</h1>
+                        ) : (
+                          <div />
+                        )}
+                      </div>
 
-                      {item.notas && (
-                        <span style={{ 
-                          fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
-                          color: '#555', 
-                          fontStyle: 'italic',
-                          fontWeight: 'normal'
-                        }}>
-                          ({item.notas})
-                        </span>
-                      )}
+                      <div style={{ width: '45%', textAlign: 'right', fontSize: '13px', fontWeight: 'bold', lineHeight: '1.5' }}>
+                        <div>{idioma === 'en' ? 'Date' : 'Fecha'}: {fecha || '_____'}</div>
+                        <div>{idioma === 'en' ? 'Venue' : 'Lugar'}: {venue || '_____'}</div>
+                        <div>{idioma === 'en' ? 'City' : 'Ciudad'}: {ciudad || '_____'}</div>
+                      </div>
+                    </div>
+
+                    {/* Canciones */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {setlistRenderizado.map((item) => (
+                        <div 
+                          key={item.idSetlist} 
+                          style={{ 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            borderTop: item.esEspecial ? '1px solid #666' : 'none',
+                            borderBottom: item.esEspecial ? '1px solid #666' : 'none',
+                            paddingTop: item.esEspecial ? '6px' : '0',
+                            paddingBottom: item.esEspecial ? '6px' : '0',
+                            marginBottom: `${espaciadoPdf}px`
+                          }}
+                        >
+                          {item.esTextoLibre ? (
+                            <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '6px' }}>
+                              {item.nombre}
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                              <div style={{ width: `${Math.max(45, tamanoFuentePdf * 1.6)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
+                                {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
+                              </div>
+                              
+                              <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                                <span style={{ 
+                                  fontSize: `${tamanoFuentePdf}px`, 
+                                  fontWeight: item.esEspecial ? 'normal' : 'bold', 
+                                  textTransform: item.esEspecial ? 'none' : 'uppercase', 
+                                  fontStyle: item.esEspecial ? 'italic' : 'normal' 
+                                }}>
+                                  {item.nombre} {item.enganchada && '>'}
+                                </span>
+
+                                {item.notas && (
+                                  <span style={{ 
+                                    fontSize: `${Math.max(11, tamanoFuentePdf - 6)}px`, 
+                                    color: '#555', 
+                                    fontStyle: 'italic',
+                                    fontWeight: 'normal'
+                                  }}>
+                                    ({item.notas})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                )}
+
+                  {/* Pie de Hoja A4 */}
+                  {contactoRedes.trim() && (
+                    <div style={{ borderTop: '1px solid #000', paddingTop: '10px', textAlign: 'center', fontSize: '12px' }}>
+                      {contactoRedes.trim()}
+                    </div>
+                  )}
+
+                </div>
               </div>
-            ))}
-          </div>
 
-          {/* Pie de Hoja A4 */}
-          {contactoRedes.trim() && (
-            <div style={{ borderTop: '1px solid #000', marginTop: '20px', paddingTop: '8px', textAlign: 'center', fontSize: '12px' }}>
-              {contactoRedes.trim()}
             </div>
-          )}
 
+          </div>
         </div>
-      </div>
-
-    </div>
-  </div>
-)}
+      )}
 
       {/* MODAL DE BIENVENIDA */}
       {mostrarBienvenida && (
@@ -1906,7 +1830,7 @@ function App() {
         </div>
       )}
 
-      {/* MODAL DE ONBOARDING (PRIMERA BANDA) */}
+      {/* MODAL DE ONBOARDING */}
       {mostrarOnboarding && (
         <div className="modal-backdrop">
           <div className="modal-card">
@@ -1933,74 +1857,6 @@ function App() {
           </div>
         </div>
       )}
-
-      {/* MOLDE OCULTO DEL PDF */}
-      <div style={{ position: 'absolute', top: '-20000px', left: '-20000px' }}>
-        <div 
-          id="setlist-pdf-contenedor" 
-          style={{ 
-            width: '190mm', 
-            backgroundColor: '#ffffff', 
-            color: '#000000', 
-            fontFamily: 'Arial, sans-serif', 
-            boxSizing: 'border-box'
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {setlistRenderizado.map((item) => (
-              <div 
-                key={item.idSetlist} 
-                style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  pageBreakInside: 'avoid',
-                  borderTop: item.esEspecial ? '1px solid #666' : 'none',
-                  borderBottom: item.esEspecial ? '1px solid #666' : 'none',
-                  paddingTop: item.esEspecial ? '8px' : '0',
-                  paddingBottom: item.esEspecial ? '8px' : '0',
-                  marginBottom: `${espaciadoPdf}px`
-                }}
-              >
-                {item.esTextoLibre ? (
-                  <div style={{ textAlign: 'center', fontSize: `${tamanoFuentePdf + 2}px`, fontWeight: 'bold', borderBottom: '2px dashed #000', paddingBottom: '8px' }}>
-                    {item.nombre}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                    
-                    <div style={{ width: `${Math.max(55, tamanoFuentePdf * 2)}px`, flexShrink: 0, fontSize: `${tamanoFuentePdf - 2}px`, fontWeight: 'bold', textAlign: 'left' }}>
-                      {!item.esEspecial && (item.esTape ? '📼' : `${item.trackNumero}.`)}
-                    </div>
-                    
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'baseline', gap: '15px' }}>
-                      <span style={{ 
-                        fontSize: `${tamanoFuentePdf}px`, 
-                        fontWeight: item.esEspecial ? 'normal' : 'bold', 
-                        textTransform: item.esEspecial ? 'none' : 'uppercase', 
-                        fontStyle: item.esEspecial ? 'italic' : 'normal' 
-                      }}>
-                        {item.nombre} {item.enganchada && '>'}
-                      </span>
-
-                      {item.notas && (
-                        <span style={{ 
-                          fontSize: `${Math.max(12, tamanoFuentePdf - 6)}px`, 
-                          color: '#555', 
-                          fontStyle: 'italic',
-                          fontWeight: 'normal'
-                        }}>
-                          ({item.notas})
-                        </span>
-                      )}
-                    </div>
-
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
     </div>
   )
