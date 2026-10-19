@@ -35,6 +35,7 @@ const translations = {
     bandNameLabel: 'Nombre:',
     bandNamePlaceholder: 'Ej: Nombre de tu Banda',
     uploadLogo: 'SUBIR LOGO',
+    logoLabel: 'Logo de la Banda:',
     socialContactLabel: 'Redes / Contacto:',
     socialContactPlaceholder: 'Ej: IG: @mi_banda | www.mibanda.com',
 
@@ -102,7 +103,6 @@ const translations = {
     defaultSetText: 'SET 1',
     untitledSong: 'Canción sin título',
 
-    // Traducciones de Autenticación y Bandas (Fase 2 & 3)
     loginGoogle: 'Iniciar sesión con Google',
     logout: 'Cerrar sesión',
     welcomeTitle: '¡Bienvenido a Setlist Creator!',
@@ -128,6 +128,7 @@ const translations = {
     bandNameLabel: 'Name:',
     bandNamePlaceholder: 'e.g. Your Band Name',
     uploadLogo: 'UPLOAD LOGO',
+    logoLabel: 'Band Logo:',
     socialContactLabel: 'Socials / Contact:',
     socialContactPlaceholder: 'e.g. IG: @my_band | www.myband.com',
 
@@ -253,6 +254,8 @@ function App() {
   const [cargandoBanda, setCargandoBanda] = useState(false);
   const [archivoLogo, setArchivoLogo] = useState(null);
 
+  const bandasInicializadasRef = useRef(false);
+
   const [busqueda, setBusqueda] = useState('');
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
@@ -284,7 +287,7 @@ function App() {
   const dragItem = useRef();
   const dragOverItem = useRef();
 
-  // Escuchar cambios de autenticación y sincronizar bandas
+  // Escuchar cambios de autenticación sin sobreescribir borrador al cambiar de pestaña
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -304,14 +307,17 @@ function App() {
       setUser(session?.user ?? null);
       if (session) {
         setMostrarBienvenida(false);
-        comprobarBandasExistentes(session.user.id);
+        // Solo recargar si aún no habíamos cargado las bandas en memoria
+        if (!bandasInicializadasRef.current) {
+          comprobarBandasExistentes(session.user.id);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const comprobarBandasExistentes = async (userId) => {
+  const comprobarBandasExistentes = async (userId, forzarCarga = false) => {
     try {
       const { data, error } = await supabase
         .from('bandas')
@@ -320,11 +326,14 @@ function App() {
         .order('created_at', { ascending: true });
 
       if (!error && data) {
+        setMisBandas(data);
         if (data.length === 0) {
           setMostrarOnboarding(true);
-        } else {
-          setMisBandas(data);
-          seleccionarBanda(data[0]);
+        } else if (!bandasInicializadasRef.current || forzarCarga) {
+          bandasInicializadasRef.current = true;
+          const idGuardado = localStorage.getItem('setlist_selected_band_id');
+          const bandaAMostrar = data.find(b => b.id === idGuardado) || data[0];
+          seleccionarBanda(bandaAMostrar);
         }
       }
     } catch (err) {
@@ -335,12 +344,14 @@ function App() {
   const seleccionarBanda = (banda) => {
     if (!banda || banda === 'nueva') {
       setBandaSeleccionadaId('nueva');
+      localStorage.setItem('setlist_selected_band_id', 'nueva');
       setNombreBanda('');
       setContactoRedes('');
       setLogoUrl(null);
       setArchivoLogo(null);
     } else {
       setBandaSeleccionadaId(banda.id);
+      localStorage.setItem('setlist_selected_band_id', banda.id);
       setNombreBanda(banda.nombre || '');
       setContactoRedes(banda.contacto_redes || '');
       setLogoUrl(banda.logo_url || null);
@@ -431,6 +442,8 @@ function App() {
     await supabase.auth.signOut();
     setMenuUsuarioAbierto(false);
     localStorage.removeItem('setlist_guest_session');
+    localStorage.removeItem('setlist_selected_band_id');
+    bandasInicializadasRef.current = false;
     setMisBandas([]);
     setBandaSeleccionadaId('nueva');
     setMostrarBienvenida(true);
@@ -454,6 +467,7 @@ function App() {
         .single();
 
       if (!error && data) {
+        bandasInicializadasRef.current = true;
         setMisBandas([data]);
         seleccionarBanda(data);
         setMostrarOnboarding(false);
@@ -946,7 +960,7 @@ function App() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
             <h2 className="section-title-right" style={{ margin: 0 }}>{t.myBandTitle}</h2>
             
-            {/* Selector de Bandas (solo para usuarios registrados) */}
+            {/* Selector de Bandas */}
             {user && (
               <select 
                 value={bandaSeleccionadaId}
@@ -970,18 +984,23 @@ function App() {
             )}
           </div>
           
+          {/* Campo Nombre ocupando el 100% */}
           <div className="field-group">
             <label className="field-label">{t.bandNameLabel}</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <input 
-                type="text" 
-                className="custom-input"
-                placeholder={t.bandNamePlaceholder} 
-                value={nombreBanda} 
-                onChange={(e) => setNombreBanda(e.target.value)}
-                style={{ flex: 1, minWidth: 0 }}
-              />
+            <input 
+              type="text" 
+              className="custom-input"
+              placeholder={t.bandNamePlaceholder} 
+              value={nombreBanda} 
+              onChange={(e) => setNombreBanda(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
 
+          {/* Fila separada para el Logo */}
+          <div className="field-group">
+            <label className="field-label">{t.logoLabel}</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <input 
                 type="file" 
                 accept="image/*"
@@ -996,11 +1015,11 @@ function App() {
               </label>
 
               {logoUrl && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <img 
                     src={logoUrl} 
                     alt="Preview Logo" 
-                    style={{ height: '38px', maxWidth: '60px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
+                    style={{ height: '38px', maxWidth: '90px', objectFit: 'contain', borderRadius: '4px', backgroundColor: '#fff', padding: '2px' }} 
                   />
                   <button 
                     onClick={quitarLogo}
@@ -1014,6 +1033,7 @@ function App() {
             </div>
           </div>
 
+          {/* Redes / Contacto */}
           <div className="field-group">
             <label className="field-label">{t.socialContactLabel}</label>
             <input 
