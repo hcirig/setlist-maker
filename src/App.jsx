@@ -59,7 +59,7 @@ const translations = {
     artistLabel: 'Artista:',
     artistPlaceholder: 'Ej: Ghost',
     songTitleSearchLabel: 'Canción:',
-    songTitleSearchPlaceholder: 'Ej: Square Hammer',
+    songTitleSearchPlaceholder: 'Ej: Marks of the Evil One',
     albumLabel: 'Álbum:',
     albumPlaceholder: 'Ej: Meliora',
     searchBtn: 'BUSCAR',
@@ -176,7 +176,7 @@ const translations = {
     artistLabel: 'Artist:',
     artistPlaceholder: 'e.g. Ghost',
     songTitleSearchLabel: 'Song:',
-    songTitleSearchPlaceholder: 'e.g. Square Hammer',
+    songTitleSearchPlaceholder: 'e.g. Marks of the Evil One',
     albumLabel: 'Album:',
     albumPlaceholder: 'e.g. Meliora',
     searchBtn: 'SEARCH',
@@ -548,7 +548,6 @@ function App() {
     }
   };
 
-  // Alternar favorita indicando título y duración
   const toggleFavoritoDirecto = async (nombreCancion, duracionSegundos = 210) => {
     const tituloLimpio = limpiarTituloCancion(nombreCancion);
     if (!tituloLimpio) return;
@@ -871,6 +870,7 @@ function App() {
     setIdioma(prev => prev === 'es' ? 'en' : 'es');
   };
 
+  // Función de búsqueda con filtrado estricto por artista y fallback por ID oficial de iTunes
   const ejecutarBusqueda = async (e) => {
     if (e) e.preventDefault();
 
@@ -892,35 +892,34 @@ function App() {
         }
 
         if (art) {
-          // Búsqueda estricta por Artista en iTunes
-          url = `https://itunes.apple.com/search?term=${encodeURIComponent(art)}&entity=song&attribute=artistTerm&limit=200`;
-          
+          // Unir los términos de búsqueda para restringir los resultados
+          const termCombinado = [art, can, alb].filter(Boolean).join(' ');
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(termCombinado)}&entity=song&limit=200`;
+
+          // Filtro estricto: la canción DEBE ser del artista indicado
           filtroCliente = (item) => {
-            let match = true;
-            if (can) {
-              match = match && coincideTexto(item.trackName, can);
-            }
-            if (alb) {
-              match = match && coincideTexto(item.collectionName, alb);
-            }
+            let match = coincideTexto(item.artistName, art);
+            if (can) match = match && coincideTexto(item.trackName, can);
+            if (alb) match = match && coincideTexto(item.collectionName, alb);
             return match;
           };
         } else if (can) {
-          // Búsqueda por título de Canción
-          url = `https://itunes.apple.com/search?term=${encodeURIComponent(can)}&entity=song&attribute=songTerm&limit=100`;
-          if (alb) {
-            filtroCliente = (item) => coincideTexto(item.collectionName, alb);
-          }
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(can)}&entity=song&limit=100`;
+          filtroCliente = (item) => {
+            let match = coincideTexto(item.trackName, can);
+            if (alb) match = match && coincideTexto(item.collectionName, alb);
+            return match;
+          };
         } else if (alb) {
-          // Búsqueda por Álbum
-          url = `https://itunes.apple.com/search?term=${encodeURIComponent(alb)}&entity=song&attribute=albumTerm&limit=100`;
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(alb)}&entity=song&limit=100`;
+          filtroCliente = (item) => coincideTexto(item.collectionName, alb);
         }
       } else {
         if (!busqueda.trim()) {
           setCargandoBusqueda(false);
           return;
         }
-        url = `https://itunes.apple.com/search?term=${encodeURIComponent(busqueda.trim())}&entity=song&limit=100`;
+        url = `https://itunes.apple.com/search?term=${encodeURIComponent(busqueda.trim())}&entity=song&limit=150`;
       }
 
       const res = await fetch(url);
@@ -930,6 +929,29 @@ function App() {
 
       if (filtroCliente) {
         resFinal = resFinal.filter(filtroCliente);
+      }
+
+      // Fallback: Si se buscó un artista específico y no hubo coincidencias con la búsqueda difusa, obtener el catálogo del artista vía Artist ID
+      if (modoBusqueda === 'avanzada' && busquedaArtista.trim() && resFinal.length === 0) {
+        const artistRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(busquedaArtista.trim())}&entity=musicArtist&limit=3`);
+        if (artistRes.ok) {
+          const artistData = await artistRes.json();
+          const artistMatch = (artistData.results || []).find(a => coincideTexto(a.artistName, busquedaArtista.trim()));
+          
+          if (artistMatch) {
+            const lookupRes = await fetch(`https://itunes.apple.com/lookup?id=${artistMatch.artistId}&entity=song&limit=200`);
+            if (lookupRes.ok) {
+              const lookupData = await lookupRes.json();
+              const songsOnly = (lookupData.results || []).filter(item => item.wrapperType === 'track');
+              resFinal = songsOnly.filter(item => {
+                let match = coincideTexto(item.artistName, busquedaArtista.trim());
+                if (busquedaCancion.trim()) match = match && coincideTexto(item.trackName, busquedaCancion.trim());
+                if (busquedaAlbum.trim()) match = match && coincideTexto(item.collectionName, busquedaAlbum.trim());
+                return match;
+              });
+            }
+          }
+        }
       }
 
       setResultados(resFinal);
@@ -1740,7 +1762,7 @@ function App() {
                               
                               <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                                 <button 
-                                  onClick={() => toggleFavoritoDirecto(tituloLimpio, duracionSegs)}
+                                  onClick={() => toggleFavoritoDirecto(tituloLimpio, duracionSegundos)}
                                   title={esFavorito ? "Quitar de mis canciones" : "Guardar en mis canciones"}
                                   style={{ backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2em', padding: '2px 4px' }}
                                 >
