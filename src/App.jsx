@@ -53,7 +53,16 @@ const translations = {
     clearSearch: 'Limpiar buscador',
     searchSearching: 'Buscando canciones... 🎵',
     searchError: 'No se pudieron obtener resultados. Revisa tu conexión.',
-    searchEmpty: 'Escribe el nombre de un artista o canción arriba para buscar...',
+    searchEmpty: 'Escribe para buscar canciones...',
+    searchSimple: 'Búsqueda Simple',
+    searchAdvanced: 'Búsqueda Avanzada',
+    artistLabel: 'Artista:',
+    artistPlaceholder: 'Ej: Ghost',
+    songTitleSearchLabel: 'Canción:',
+    songTitleSearchPlaceholder: 'Ej: Square Hammer',
+    albumLabel: 'Álbum:',
+    albumPlaceholder: 'Ej: Meliora',
+    searchBtn: 'BUSCAR',
     singlesVarious: 'Sencillos / Varios',
 
     addFavoriteTitle: 'Agregar Tema Propio',
@@ -161,7 +170,16 @@ const translations = {
     clearSearch: 'Clear search',
     searchSearching: 'Searching songs... 🎵',
     searchError: 'Could not fetch results. Check your connection.',
-    searchEmpty: 'Type an artist or song name above to search...',
+    searchEmpty: 'Type to search songs...',
+    searchSimple: 'Simple Search',
+    searchAdvanced: 'Advanced Search',
+    artistLabel: 'Artist:',
+    artistPlaceholder: 'e.g. Ghost',
+    songTitleSearchLabel: 'Song:',
+    songTitleSearchPlaceholder: 'e.g. Square Hammer',
+    albumLabel: 'Album:',
+    albumPlaceholder: 'e.g. Meliora',
+    searchBtn: 'SEARCH',
     singlesVarious: 'Singles / Various',
 
     addFavoriteTitle: 'Add Custom Song',
@@ -260,9 +278,16 @@ const formatearTiempoTotal = (segundosTotales) => {
 
 const limpiarTituloCancion = (nombreOriginal) => {
   if (!nombreOriginal) return '';
-  const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster\vert{}remastered\vert{}version\vert{}edit\vert{}mix\vert{}live\vert{}deluxe\vert{}bonus\vert{}track\vert{}anniversary\vert{}single\vert{}mono\vert{}stereo\vert{}digital\vert{}take\vert{}demo\vert{}edition)\b.*?[\)\]\}]/gi;
+  const patronInnecesario = /[\(\[\{]\s*.*?\b(remaster|remastered|version|edit|mix|live|deluxe|bonus|track|anniversary|single|mono|stereo|digital|take|demo|edition)\b.*?[\)\]\}]/gi;
   let tituloLimpio = nombreOriginal.replace(patronInnecesario, '');
   return tituloLimpio.replace(/\s+/g, ' ').trim();
+};
+
+const coincideTexto = (textoFuente, textoBuscado) => {
+  if (!textoFuente || !textoBuscado) return true;
+  const palabras = textoBuscado.toLowerCase().split(/\s+/).filter(Boolean);
+  const fuente = textoFuente.toLowerCase();
+  return palabras.every(palabra => fuente.includes(palabra));
 };
 
 function App() {
@@ -297,7 +322,13 @@ function App() {
 
   const bandasInicializadasRef = useRef(false);
 
+  // Estados de Buscador
+  const [modoBusqueda, setModoBusqueda] = useState('simple'); // 'simple' | 'avanzada'
   const [busqueda, setBusqueda] = useState('');
+  const [busquedaArtista, setBusquedaArtista] = useState('');
+  const [busquedaCancion, setBusquedaCancion] = useState('');
+  const [busquedaAlbum, setBusquedaAlbum] = useState('');
+
   const [resultados, setResultados] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState(null);
@@ -840,17 +871,68 @@ function App() {
     setIdioma(prev => prev === 'es' ? 'en' : 'es');
   };
 
-  const ejecutarBusqueda = async (termino) => {
-    const query = termino || busqueda;
-    if (!query.trim()) return;
+  const ejecutarBusqueda = async (e) => {
+    if (e) e.preventDefault();
 
     setCargandoBusqueda(true);
     setErrorBusqueda(null);
+
     try {
-      const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=50`);
+      let url = '';
+      let filtroCliente = null;
+
+      if (modoBusqueda === 'avanzada') {
+        const art = busquedaArtista.trim();
+        const can = busquedaCancion.trim();
+        const alb = busquedaAlbum.trim();
+
+        if (!art && !can && !alb) {
+          setCargandoBusqueda(false);
+          return;
+        }
+
+        if (art) {
+          // Búsqueda estricta por Artista en iTunes
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(art)}&entity=song&attribute=artistTerm&limit=200`;
+          
+          filtroCliente = (item) => {
+            let match = true;
+            if (can) {
+              match = match && coincideTexto(item.trackName, can);
+            }
+            if (alb) {
+              match = match && coincideTexto(item.collectionName, alb);
+            }
+            return match;
+          };
+        } else if (can) {
+          // Búsqueda por título de Canción
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(can)}&entity=song&attribute=songTerm&limit=100`;
+          if (alb) {
+            filtroCliente = (item) => coincideTexto(item.collectionName, alb);
+          }
+        } else if (alb) {
+          // Búsqueda por Álbum
+          url = `https://itunes.apple.com/search?term=${encodeURIComponent(alb)}&entity=song&attribute=albumTerm&limit=100`;
+        }
+      } else {
+        if (!busqueda.trim()) {
+          setCargandoBusqueda(false);
+          return;
+        }
+        url = `https://itunes.apple.com/search?term=${encodeURIComponent(busqueda.trim())}&entity=song&limit=100`;
+      }
+
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Error al conectar con el servidor de música.');
       const data = await res.json();
-      setResultados(data.results || []);
+      let resFinal = data.results || [];
+
+      if (filtroCliente) {
+        resFinal = resFinal.filter(filtroCliente);
+      }
+
+      setResultados(resFinal);
     } catch (err) {
       setErrorBusqueda(t.searchError);
     } finally {
@@ -858,13 +940,11 @@ function App() {
     }
   };
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    ejecutarBusqueda();
-  };
-
   const limpiarBusqueda = () => {
     setBusqueda('');
+    setBusquedaArtista('');
+    setBusquedaCancion('');
+    setBusquedaAlbum('');
     setResultados([]);
     setErrorBusqueda(null);
   };
@@ -1502,41 +1582,118 @@ function App() {
 
           {pestañaCatalogo === 'buscador' ? (
             <>
-              <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
-                <input 
-                  type="text" 
-                  className="custom-input"
-                  placeholder={t.searchPlaceholder} 
-                  value={busqueda} 
-                  onChange={(e) => {
-                    setBusqueda(e.target.value);
-                    if (!e.target.value.trim()) {
-                      setResultados([]);
-                    }
-                  }}
-                  style={{ flex: 1, minWidth: 0 }}
-                />
-                <button 
-                  type="submit" 
-                  disabled={cargandoBusqueda}
-                  className="btn-round"
-                  title={t.searchTitle}
+              {/* Conmutador de modo de búsqueda */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '0.8em', fontWeight: 'bold', color: 'var(--text-muted)' }}>
+                  {modoBusqueda === 'simple' ? t.searchSimple : t.searchAdvanced}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setModoBusqueda(modoBusqueda === 'simple' ? 'avanzada' : 'simple')}
+                  style={{ background: 'none', border: 'none', color: 'var(--btn-blue)', cursor: 'pointer', fontSize: '0.75em', fontWeight: 'bold', textDecoration: 'underline' }}
                 >
-                  <i className="fa-solid fa-magnifying-glass btn-icon"></i>
+                  {modoBusqueda === 'simple' ? `⚙️ ${t.searchAdvanced}` : `🔍 ${t.searchSimple}`}
                 </button>
+              </div>
 
-                {(busqueda || resultados.length > 0) && (
+              {modoBusqueda === 'simple' ? (
+                /* Formulario Búsqueda Simple */
+                <form onSubmit={ejecutarBusqueda} style={{ display: 'flex', gap: '8px', marginBottom: '12px', width: '100%', boxSizing: 'border-box', alignItems: 'center' }}>
+                  <input 
+                    type="text" 
+                    className="custom-input"
+                    placeholder={t.searchPlaceholder} 
+                    value={busqueda} 
+                    onChange={(e) => {
+                      setBusqueda(e.target.value);
+                      if (!e.target.value.trim()) {
+                        setResultados([]);
+                      }
+                    }}
+                    style={{ flex: 1, minWidth: 0 }}
+                  />
                   <button 
-                    type="button" 
-                    onClick={limpiarBusqueda}
-                    className="btn-danger-round"
-                    style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
-                    title={t.clearSearch}
+                    type="submit" 
+                    disabled={cargandoBusqueda}
+                    className="btn-round"
+                    title={t.searchTitle}
                   >
-                    ✕
+                    <i className="fa-solid fa-magnifying-glass btn-icon"></i>
                   </button>
-                )}
-              </form>
+
+                  {(busqueda || resultados.length > 0) && (
+                    <button 
+                      type="button" 
+                      onClick={limpiarBusqueda}
+                      className="btn-danger-round"
+                      style={{ width: '40px', height: '40px', fontSize: '0.9em' }}
+                      title={t.clearSearch}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </form>
+              ) : (
+                /* Formulario Búsqueda Avanzada por Campos */
+                <form onSubmit={ejecutarBusqueda} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', backgroundColor: 'var(--input-bg)', padding: '10px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
+                  <div className="field-group">
+                    <label className="field-label">{t.artistLabel}</label>
+                    <input 
+                      type="text" 
+                      className="custom-input"
+                      placeholder={t.artistPlaceholder}
+                      value={busquedaArtista}
+                      onChange={(e) => setBusquedaArtista(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label className="field-label">{t.songTitleSearchLabel}</label>
+                    <input 
+                      type="text" 
+                      className="custom-input"
+                      placeholder={t.songTitleSearchPlaceholder}
+                      value={busquedaCancion}
+                      onChange={(e) => setBusquedaCancion(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label className="field-label">{t.albumLabel}</label>
+                    <input 
+                      type="text" 
+                      className="custom-input"
+                      placeholder={t.albumPlaceholder}
+                      value={busquedaAlbum}
+                      onChange={(e) => setBusquedaAlbum(e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                    <button 
+                      type="submit" 
+                      disabled={cargandoBusqueda || (!busquedaArtista.trim() && !busquedaCancion.trim() && !busquedaAlbum.trim())}
+                      className="btn-pill"
+                      style={{ flex: 1, justifyContent: 'center', height: '36px', fontSize: '0.8em' }}
+                    >
+                      <i className="fa-solid fa-magnifying-glass btn-icon"></i>
+                      <span>{t.searchBtn}</span>
+                    </button>
+
+                    {(busquedaArtista || busquedaCancion || busquedaAlbum || resultados.length > 0) && (
+                      <button 
+                        type="button" 
+                        onClick={limpiarBusqueda}
+                        className="btn-danger-round"
+                        style={{ width: '36px', height: '36px', fontSize: '0.85em' }}
+                        title={t.clearSearch}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
 
               <div className="scroll-area">
                 {cargandoBusqueda ? (
@@ -1609,7 +1766,7 @@ function App() {
             </>
           ) : (
             <>
-              {/* Formulario Reestructurado */}
+              {/* Formulario Reestructurado para Mis Canciones */}
               <form onSubmit={agregarCancionFavorita} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px', backgroundColor: 'var(--input-bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--input-border)' }}>
                 <span style={{ fontSize: '0.85em', fontWeight: 'bold', color: 'var(--text-main)' }}>{t.addFavoriteTitle}</span>
                 
